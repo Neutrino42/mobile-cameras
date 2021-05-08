@@ -1,0 +1,6 @@
+# Ignore everything
+/*
+# But include the following
+!src/
+!test/
+!.gitignore
