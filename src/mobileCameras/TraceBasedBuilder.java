@@ -48,9 +48,17 @@ import repast.simphony.space.grid.SimpleGridAdder;
  */
 
 public class TraceBasedBuilder implements ContextBuilder<Object> {
+	// size of the world, origin (0,0)
+	private double maxX = 50;
+	private double maxY = 50;
+	private double humanSpeed = 1;
+	private int cameraRange = 10;
+
+
 
 	@Override
 	public Context build(Context<Object> context) {
+		
 		System.setOut(System.out);
 		System.out.println("TraceBasedBuilder");
 		
@@ -66,11 +74,11 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 
 		ContinuousSpaceFactory spaceFactory = ContinuousSpaceFactoryFinder.createContinuousSpaceFactory(null);
 		ContinuousSpace<Object> space = spaceFactory.createContinuousSpace("space", context,
-				new RandomCartesianAdder<Object>(), new repast.simphony.space.continuous.BouncyBorders(), 50, 50);
+				new RandomCartesianAdder<Object>(), new repast.simphony.space.continuous.BouncyBorders(), maxX, maxY);
 
 		GridFactory gridFactory = GridFactoryFinder.createGridFactory(null);
 		Grid<Object> grid = gridFactory.createGrid("grid", context,
-				new GridBuilderParameters<Object>(new BouncyBorders(), new SimpleGridAdder<Object>(), true, 50, 50));
+				new GridBuilderParameters<Object>(new BouncyBorders(), new SimpleGridAdder<Object>(), true, (int)maxX, (int)maxY));
 		
 		Parameters params = RunEnvironment.getInstance().getParameters();
 			
@@ -78,7 +86,6 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 		Document scenario = MyUtil.parseScenarioXML(initScenario);
 
 		int zombieCount = params.getInteger("camera_count");
-		int cameraRange = 10;
 		for (int i = 0; i < zombieCount; i++) {
 			context.add(new Camera(i, space, grid, cameraRange));
 		}
@@ -99,31 +106,32 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 		
 		// Initialize object moving direction and position
 		int humanCount = params.getInteger("human_count");
-		double humanSpeed = 1;
-		int angle = 0;
 		double[] location = new double[2];
 
 		for (int i = 0; i < humanCount; i++) {
+			
+			int angle = Integer.parseInt(covObjMap.get(i).getAttribute("angle"));
+			location[0] = Double.parseDouble(covObjMap.get(i).getAttribute("x"));
+			location[1] = Double.parseDouble(covObjMap.get(i).getAttribute("y"));
+			
+			Human human = new Human(i, space, grid, angle, humanSpeed, humanSeed);
+			context.add(human);
+				
 			if (covObjMap.containsKey(i)) {
 				// initialization of a covered object
-				angle = Integer.parseInt(covObjMap.get(i).getAttribute("angle"));
-				location[0] = Double.parseDouble(covObjMap.get(i).getAttribute("x"));
-				location[1] = Double.parseDouble(covObjMap.get(i).getAttribute("y"));
-
-				Human human = new Human(i, space, grid, angle, humanSpeed, humanSeed);
-				context.add(human);
-				space.moveTo(human, location);
-
+				
 				// if the object is important, randomly assign the importance duration
 				if (covObjMap.get(i).getAttribute("is_important").equals("true")) {
 					human.setDuration(RandomHelper.nextIntFromTo(5, 100)); 
 				}
 			} else {
-				// initialization of an uncovered object
-				angle = RandomHelper.nextIntFromTo(0, 360);
-				Human human = new Human(i, space, grid, angle, humanSpeed, humanSeed);
-				context.add(human);
+				// Estimate properties of uncovered human: position, importance
+				double deltaX = RandomHelper.nextDoubleFromTo(-5,5);
+				double deltaY = RandomHelper.nextDoubleFromTo(-5,5);
+				location = estimateLocation(location, deltaX, deltaY);
 			}
+			
+			space.moveTo(human, location);
 		}
 		
 		// set back to default seed for cameras
@@ -215,34 +223,8 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 		}
 		
 		// Scheduling 
-		
 		int startTime = 1 + Integer.parseInt(((Element) scenario.getElementsByTagName("scenario").item(0)).getAttribute("time"));
-		int startTime2 = startTime + (6 - (startTime % 5)) % 5;
-		
-		Schedule schedule = (Schedule) RunEnvironment.getInstance().getCurrentSchedule();
-		ScheduleParameters sp100 = ScheduleParameters.createRepeating(startTime, 1, 100);
-		ScheduleParameters sp1Every5 = ScheduleParameters.createRepeating(startTime2, 5, 1); // this one is different
-		ScheduleParameters spSecondLast = ScheduleParameters.createRepeating(startTime-1 , 1, ScheduleParameters.LAST_PRIORITY + 1);
-		ScheduleParameters spFirst = ScheduleParameters.createRepeating(startTime, 1, ScheduleParameters.FIRST_PRIORITY);
-		ScheduleParameters sp3 = ScheduleParameters.createRepeating(startTime, 1, 3);
-		ScheduleParameters sp2 = ScheduleParameters.createRepeating(startTime, 1, 2);
-		ScheduleParameters spLast = ScheduleParameters.createRepeating(startTime-1, 1, ScheduleParameters.LAST_PRIORITY);
-		
-		for (Object cam : camList) {
-			schedule.schedule(sp100, cam, "step");
-			schedule.schedule(sp1Every5, cam, "clearMsg");
-			schedule.schedule(spSecondLast, cam, "printTrace");
-		}
-		
-		Stream<Object> s3 = context.getObjectsAsStream(Human.class);
-		List<Object> humList = s3.collect(Collectors.toList());
-		for (Object hum : humList) {
-			schedule.schedule(spFirst, hum, "run");
-		}
-		
-		schedule.schedule(sp3, context, "evaporateNetwork");
-		schedule.schedule(sp2, context, "strengthenNetwork");
-		schedule.schedule(spLast, context, "collectTraceForEnv");
+		MyUtil.scheduling(context, startTime);
 
 
 		// Redirecting printing to file
@@ -273,8 +255,27 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 			}
 		}
 		
-
 		return context;
+	}
+
+	
+	private double[] estimateLocation(double[] location, double deltaX, double deltaY) {
+		double newX = location[0] + deltaX;
+		double newY = location[1] + deltaY;
+		
+		// check world boundary
+		if (newX < 0) {
+			newX = 0;
+		} else if (newX > maxX) {
+			newX = maxX;
+		}
+		if (newY < 0) {
+			newY = 0;
+		} else if (newY > maxY) {
+			newY = maxY;
+		}
+		
+		return new double[] {newX, newY};
 	}
 
 }

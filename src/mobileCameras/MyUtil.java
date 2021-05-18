@@ -3,6 +3,9 @@ package mobileCameras;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -13,6 +16,10 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import repast.simphony.context.Context;
+import repast.simphony.engine.environment.RunEnvironment;
+import repast.simphony.engine.schedule.Schedule;
+import repast.simphony.engine.schedule.ScheduleParameters;
 import repast.simphony.space.Dimensions;
 import repast.simphony.space.continuous.ContinuousSpace;
 import repast.simphony.space.continuous.NdPoint;
@@ -93,6 +100,39 @@ public class MyUtil {
 	public static NodeList returnUncoveredObjects(Document scenario) {
 		Element listNode = (Element) scenario.getElementsByTagName("uncovered_objects").item(0);
 		return listNode.getElementsByTagName("object");
+	}
+	
+	
+	public static void scheduling(Context<Object> context, int startTime) {
+		int startTime2 = startTime + (6 - (startTime % 5)) % 5;
+		
+		List<Object> camList = context.getObjectsAsStream(Camera.class).collect(Collectors.toList());
+		List<Object> humList = context.getObjectsAsStream(Human.class).collect(Collectors.toList());
+		
+		Schedule schedule = (Schedule) RunEnvironment.getInstance().getCurrentSchedule();
+		
+		ScheduleParameters sp100 = ScheduleParameters.createRepeating(startTime, 1, 100);
+		ScheduleParameters sp1Every5 = ScheduleParameters.createRepeating(startTime2, 5, 1); // this one is different
+		ScheduleParameters spSecondLast = ScheduleParameters.createRepeating(startTime-1 , 1, ScheduleParameters.LAST_PRIORITY + 1);
+		ScheduleParameters spFirst = ScheduleParameters.createRepeating(startTime, 1, ScheduleParameters.FIRST_PRIORITY);
+		ScheduleParameters sp3 = ScheduleParameters.createRepeating(startTime, 1, 3);
+		ScheduleParameters sp2 = ScheduleParameters.createRepeating(startTime, 1, 2);
+		ScheduleParameters spLast = ScheduleParameters.createRepeating(startTime-1, 1, ScheduleParameters.LAST_PRIORITY);
+		
+		for (Object cam : camList) {
+			schedule.schedule(sp100, cam, "step");
+			schedule.schedule(sp1Every5, cam, "clearMsg");
+			schedule.schedule(spSecondLast, cam, "printTrace");
+		}
+		
+		for (Object hum : humList) {
+			schedule.schedule(spFirst, hum, "run");
+		}
+		
+		schedule.schedule(sp3, context, "evaporateNetwork");
+		schedule.schedule(sp2, context, "strengthenNetwork");
+		schedule.schedule(spLast, context, "collectTraceForEnv");
+		
 	}
 	
 }

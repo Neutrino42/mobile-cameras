@@ -48,19 +48,25 @@ public class Human {
 	 */
 	//@ScheduledMethod(start = 1, interval = 1, priority = ScheduleParameters.FIRST_PRIORITY)
 	public void run() {		
-		this.angleDeg = MyUtil.returnBounceAngle(space, space.getLocation(this), this.angleDeg, this.speed);
-		
-		space.moveByVector(this, speed, Math.toRadians(angleDeg), 0);
-		NdPoint myPoint = space.getLocation(this);
-		grid.moveTo(this, (int)myPoint.getX(), (int)myPoint.getY());
-		
 		// seed := currentSimulationTimeTick, repastSeedFromUser, humanID, humanSeedFromUser
 		String seedStr = Double.toString(RunEnvironment.getInstance().getCurrentSchedule().getTickCount()) + 
 				Double.toString(RandomHelper.getSeed()) + "seed" +
 				Integer.toString(this.id+1) + Integer.toString(this.seed);
 		int seed = new StringBuilder(seedStr).reverse().toString().hashCode();
+		Random randGen = new Random(seed);
 		
-		updateImportance(new Random(seed));
+		// add uncertainty to the new location
+		double newDistance = speed + randGen.nextGaussian() * (speed/5);  // std = (speed/5);
+		double newAngleRad = Math.toRadians(angleDeg) + randGen.nextGaussian() * (speed/5);
+		
+		space.moveByVector(this, newDistance, newAngleRad, 0);
+		NdPoint myPoint = space.getLocation(this);
+		grid.moveTo(this, (int)myPoint.getX(), (int)myPoint.getY());
+		
+		// update angle if there is any bounce
+		this.angleDeg = MyUtil.returnBounceAngle(space, space.getLocation(this), this.angleDeg, this.speed);
+		
+		updateImportance(randGen);
 	}
 	
 

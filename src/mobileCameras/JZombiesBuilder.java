@@ -51,11 +51,18 @@ import repast.simphony.util.ContextUtils;
  */
 
 public class JZombiesBuilder implements ContextBuilder<Object> {
+	// size of the world, origin (0,0)
+	private double maxX = 50;
+	private double maxY = 50;
+	private int cameraRange = 10;
+	private double humanSpeed = 1;
+	private int startTime = 1;
+	private int userSeed = 999;
+
 	
 	@Override
 	public Context build(Context<Object> context) {
 		context = new MyContext();
-		
 		context.setId("mobileCameras");
 		
 		NetworkBuilder<Object> netBuilder = new NetworkBuilder<Object>("communication network", context, false);
@@ -71,26 +78,26 @@ public class JZombiesBuilder implements ContextBuilder<Object> {
 				spaceFactory.createContinuousSpace("space", context, 
 						new RandomCartesianAdder<Object>(),
 						new repast.simphony.space.continuous.BouncyBorders(),
-						50, 50);
+						maxX, maxY);
 		
 		GridFactory gridFactory = GridFactoryFinder.createGridFactory(null);
 		Grid<Object> grid = gridFactory.createGrid("grid", context,
 				new GridBuilderParameters<Object>(new BouncyBorders(),
 						new SimpleGridAdder<Object>(),
-						true, 50, 50));
+						true, (int)maxX, (int)maxY));
 		
+		// parse parameters.xml file
 		Parameters params = RunEnvironment.getInstance().getParameters();
 		int zombieCount = params.getInteger("camera_count");
-		int cameraRange = 10;
+		int humanCount = params.getInteger("human_count");
+
 		for (int i = 0; i < zombieCount; i++) {
 			context.add(new Camera(i, space, grid, cameraRange));
 		}
 		
-		int humanCount = params.getInteger("human_count");
-		double humanSpeed = 1;
 		for (int i = 0; i < humanCount; i++) {
-			int angle = RandomHelper.nextIntFromTo(0, 360);
-			context.add(new Human(i, space, grid, angle, humanSpeed, 999));
+			int angle = RandomHelper.nextIntFromTo(0, 4) * 90;
+			context.add(new Human(i, space, grid, angle, humanSpeed, userSeed));
 		}
 		
 		// add edge with weight 0 to every pair of cameras
@@ -108,15 +115,20 @@ public class JZombiesBuilder implements ContextBuilder<Object> {
 			grid.moveTo(obj, (int)pt.getX(), (int)pt.getY());
 		}
 		
+		// Scheduling
+		MyUtil.scheduling(context, startTime);
+
 		
 		boolean redirectOutput = true;
 		if (redirectOutput) {
 			// Redirecting printing to file
-			File directory = new File("./trace");
+			String baseDir = "./trace_testtt/";
+			String fileName = "sample.txt";
+			File directory = new File(baseDir);
 			if (! directory.exists()) {
 				directory.mkdir();
 			}
-			File file = new File("./trace/sample.txt");
+			File file = new File(baseDir + fileName);
 	        PrintStream stream;
 			try {
 				stream = new PrintStream(file);
