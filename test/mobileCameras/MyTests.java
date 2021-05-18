@@ -50,7 +50,7 @@ public class MyTests {
 	public void test() {
 		double speed = 10;
 		int angleDeg = 270;
-		Human human = new Human(111, space, null, angleDeg, speed);
+		Human human = new Human(111, space, null, angleDeg, speed, 999);
 		context.add(human);
 		space.moveTo(human, 1, 1);
 		

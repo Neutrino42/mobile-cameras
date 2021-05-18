@@ -30,8 +30,9 @@ public class Human {
 	private double speed;
 	private boolean isImportant;
 	private int imptDuration;
+	private int seed;
 	
-	public Human(int id, ContinuousSpace<Object> space, Grid<Object> grid, int angle, double speed) {
+	public Human(int id, ContinuousSpace<Object> space, Grid<Object> grid, int angle, double speed, int seed) {
 		this.id = id;
 		this.space = space;
 		this.grid = grid;
@@ -39,6 +40,7 @@ public class Human {
 		this.speed = speed;
 		this.isImportant = false;
 		this.imptDuration = 0;
+		this.seed = seed;
 	}
 	
 	/*
@@ -52,12 +54,11 @@ public class Human {
 		NdPoint myPoint = space.getLocation(this);
 		grid.moveTo(this, (int)myPoint.getX(), (int)myPoint.getY());
 		
-		// seed := currentSimulationTimeTick, repastSeedFromUser, humanID, 999 
+		// seed := currentSimulationTimeTick, repastSeedFromUser, humanID, humanSeedFromUser
 		String seedStr = Double.toString(RunEnvironment.getInstance().getCurrentSchedule().getTickCount()) + 
 				Double.toString(RandomHelper.getSeed()) + "seed" +
-				Integer.toString(this.id+1) + "999";
+				Integer.toString(this.id+1) + Integer.toString(this.seed);
 		int seed = new StringBuilder(seedStr).reverse().toString().hashCode();
-		//System.out.println(seed);
 		
 		updateImportance(new Random(seed));
 	}

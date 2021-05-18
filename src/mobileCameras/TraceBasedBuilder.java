@@ -73,10 +73,6 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 				new GridBuilderParameters<Object>(new BouncyBorders(), new SimpleGridAdder<Object>(), true, 50, 50));
 		
 		Parameters params = RunEnvironment.getInstance().getParameters();
-		System.out.println(params.getSchema().size());
-		for (String str : params.getSchema().parameterNames()) {
-			System.out.println(str);
-		}
 			
 		String initScenario = params.getString("init_scenario_path");
 		Document scenario = MyUtil.parseScenarioXML(initScenario);
@@ -90,7 +86,17 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 
 		// Get all covered objects from file
 		HashMap<Integer, Element> covObjMap = MyUtil.returnCoveredObjects(scenario);
+		
+		// Use user provided seed when re-initializing humans
+		int seedOriginal = RandomHelper.getSeed();
+		
+		int scenarioTime = Integer.parseInt(((Element) scenario.getElementsByTagName("scenario").item(0)).getAttribute("time"));
+		int humanSeed = params.getInteger("user_seed");
+		int userInitSeed = (int) Math.pow(humanSeed, scenarioTime);
+		RandomHelper.setSeed(userInitSeed);
 
+		
+		
 		// Initialize object moving direction and position
 		int humanCount = params.getInteger("human_count");
 		double humanSpeed = 1;
@@ -104,7 +110,7 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 				location[0] = Double.parseDouble(covObjMap.get(i).getAttribute("x"));
 				location[1] = Double.parseDouble(covObjMap.get(i).getAttribute("y"));
 
-				Human human = new Human(i, space, grid, angle, humanSpeed);
+				Human human = new Human(i, space, grid, angle, humanSpeed, humanSeed);
 				context.add(human);
 				space.moveTo(human, location);
 
@@ -115,10 +121,14 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 			} else {
 				// initialization of an uncovered object
 				angle = RandomHelper.nextIntFromTo(0, 360);
-				Human human = new Human(i, space, grid, angle, humanSpeed);
+				Human human = new Human(i, space, grid, angle, humanSpeed, humanSeed);
 				context.add(human);
 			}
 		}
+		
+		// set back to default seed for cameras
+		RandomHelper.setSeed(seedOriginal);
+		
 
 		// Initialize camera position, messages, covered humans
 		NodeList cameraListFromXML = scenario.getElementsByTagName("camera");
@@ -246,6 +256,10 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 			String outFile = params.getString("output_trace_path");
 
 			File file = new File(outFile);
+			if (!file.exists()) {
+				file.getParentFile().mkdirs();
+			}
+			
 			PrintStream stream;
 			try {
 				stream = new PrintStream(file);
@@ -253,6 +267,7 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 				System.out.flush();
 				System.setOut(stream);
 			} catch (FileNotFoundException e) {
+				System.out.println("FAILED to dreict system output to file " + file.getAbsolutePath());
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}

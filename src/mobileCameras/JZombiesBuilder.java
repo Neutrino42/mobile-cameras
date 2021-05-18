@@ -90,7 +90,7 @@ public class JZombiesBuilder implements ContextBuilder<Object> {
 		double humanSpeed = 1;
 		for (int i = 0; i < humanCount; i++) {
 			int angle = RandomHelper.nextIntFromTo(0, 360);
-			context.add(new Human(i, space, grid, angle, humanSpeed));
+			context.add(new Human(i, space, grid, angle, humanSpeed, 999));
 		}
 		
 		// add edge with weight 0 to every pair of cameras
