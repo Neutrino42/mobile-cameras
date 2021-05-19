@@ -135,4 +135,14 @@ public class MyUtil {
 		
 	}
 	
+	public static double nextChaoticValue(double x) {
+		if (x < 0) {
+			x = Math.abs(x);
+		}
+		if (x > 1) {
+			x = x - Math.floor(x);
+		}
+		return 4 * x * (1-x);
+	}
+	
 }

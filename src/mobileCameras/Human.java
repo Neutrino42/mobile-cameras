@@ -31,6 +31,7 @@ public class Human {
 	private boolean isImportant;
 	private int imptDuration;
 	private int seed;
+	private double deviation = Double.NaN;
 	
 	public Human(int id, ContinuousSpace<Object> space, Grid<Object> grid, int angle, double speed, int seed) {
 		this.id = id;
@@ -54,10 +55,20 @@ public class Human {
 				Integer.toString(this.id+1) + Integer.toString(this.seed);
 		int seed = new StringBuilder(seedStr).reverse().toString().hashCode();
 		Random randGen = new Random(seed);
+
 		
-		// add uncertainty to the new location
-		double newDistance = speed + randGen.nextGaussian() * (speed/5);  // std = (speed/5);
-		double newAngleRad = Math.toRadians(angleDeg) + randGen.nextGaussian() * (speed/5);
+		// add chaotic behavior
+		if (Double.isNaN(this.deviation)) {
+			NdPoint myPoint = space.getLocation(this);
+			this.deviation = Math.abs(Math.floor(myPoint.getX()) - myPoint.getX());
+		} else {
+			this.deviation = MyUtil.nextChaoticValue(this.deviation);
+		}
+
+		
+		double newDistance = speed + (deviation * 2 - 1) * (speed/5); 
+		double newAngleRad = Math.toRadians(angleDeg) + (deviation * 2 - 1) / 5;
+		
 		
 		space.moveByVector(this, newDistance, newAngleRad, 0);
 		NdPoint myPoint = space.getLocation(this);

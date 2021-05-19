@@ -11,6 +11,9 @@ import org.w3c.dom.NodeList;
 
 public class Test {
 	public static void main(String[] args) {
+		double a = 1.0/3;
+		System.out.println(Math.floor(a));
+		/*
 		Document scenario = MyUtil.parseScenarioXML("./trace/scenario.xml");
 		System.out.println(scenario.getFirstChild().getNodeName());
 
@@ -51,7 +54,7 @@ public class Test {
 				System.out.println(msgTime + " " + msgSender + " " + msgObj + " " + msgX + " " + msgY);
 			}
 		}
-
+*/
 
 	}
 	
