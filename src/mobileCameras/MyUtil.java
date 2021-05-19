@@ -97,9 +97,17 @@ public class MyUtil {
 		return objMap;
 	}
 
-	public static NodeList returnUncoveredObjects(Document scenario) {
+	public static HashMap<Integer, Element> returnUncoveredObjects(Document scenario) {
+		HashMap<Integer, Element> objMap = new HashMap<>();
+
 		Element listNode = (Element) scenario.getElementsByTagName("uncovered_objects").item(0);
-		return listNode.getElementsByTagName("object");
+		NodeList objectList = listNode.getElementsByTagName("object");
+		for (int j = 0; j < objectList.getLength(); j++) {
+			Element obj = (Element) objectList.item(j);
+			int id = Integer.parseInt(obj.getAttribute("id"));
+			objMap.putIfAbsent(id, obj);
+		}
+		return objMap;
 	}
 	
 	

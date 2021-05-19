@@ -90,9 +90,12 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 			context.add(new Camera(i, space, grid, cameraRange));
 		}
 
+		int startTime = 1 + Integer.parseInt(((Element) scenario.getElementsByTagName("scenario").item(0)).getAttribute("time"));
 
-		// Get all covered objects from file
+
+		// Get all covered and uncovered objects from file
 		HashMap<Integer, Element> covObjMap = MyUtil.returnCoveredObjects(scenario);
+		HashMap<Integer, Element> uncovObjMap = MyUtil.returnUncoveredObjects(scenario);
 		
 		// Use user provided seed when re-initializing humans
 		int seedOriginal = RandomHelper.getSeed();
@@ -103,35 +106,43 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 		RandomHelper.setSeed(userInitSeed);
 
 		
-		
-		// Initialize object moving direction and position
+		// Initialize human moving direction and position
 		int humanCount = params.getInteger("human_count");
 		double[] location = new double[2];
 
-		for (int i = 0; i < humanCount; i++) {
+		for (int id = 0; id < humanCount; id++) {
+			// check whether the human is covered or uncovered
+			Element humanInfo = null;
+			if (covObjMap.containsKey(id)) {
+				humanInfo = covObjMap.get(id);
+			} else if (uncovObjMap.containsKey(id)){
+				humanInfo = uncovObjMap.get(id);
+			}
 			
-			int angle = Integer.parseInt(covObjMap.get(i).getAttribute("angle"));
-			location[0] = Double.parseDouble(covObjMap.get(i).getAttribute("x"));
-			location[1] = Double.parseDouble(covObjMap.get(i).getAttribute("y"));
+			int angle = Integer.parseInt(humanInfo.getAttribute("angle"));
+			location[0] = Double.parseDouble(humanInfo.getAttribute("x"));
+			location[1] = Double.parseDouble(humanInfo.getAttribute("y"));
 			
-			Human human = new Human(i, space, grid, angle, humanSpeed, humanSeed);
+			Human human = new Human(id, space, grid, angle, humanSpeed, humanSeed);
 			context.add(human);
-				
-			if (covObjMap.containsKey(i)) {
-				// initialization of a covered object
-				
-				// if the object is important, randomly assign the importance duration
-				if (covObjMap.get(i).getAttribute("is_important").equals("true")) {
-					human.setDuration(RandomHelper.nextIntFromTo(5, 100)); 
-				}
-			} else {
-				// Estimate properties of uncovered human: position, importance
+
+			// if the human is important, estimate the importance duration
+			if (humanInfo.getAttribute("is_important").equals("true")) {
+				int deviation = 5;
+				human.setDuration(startTime, RandomHelper.nextIntFromTo(0, deviation)); 
+			}
+			
+			
+			// Particularly, if the human is uncovered, estimate its location and importance
+			if (uncovObjMap.containsKey(id)){
 				double deltaX = RandomHelper.nextDoubleFromTo(-5,5);
 				double deltaY = RandomHelper.nextDoubleFromTo(-5,5);
 				location = estimateLocation(location, deltaX, deltaY);
 			}
 			
+			// Decide the human's location
 			space.moveTo(human, location);
+			
 		}
 		
 		// set back to default seed for cameras
@@ -223,7 +234,6 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 		}
 		
 		// Scheduling 
-		int startTime = 1 + Integer.parseInt(((Element) scenario.getElementsByTagName("scenario").item(0)).getAttribute("time"));
 		MyUtil.scheduling(context, startTime);
 
 

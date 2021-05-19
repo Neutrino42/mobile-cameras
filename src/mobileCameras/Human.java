@@ -31,7 +31,7 @@ public class Human {
 	private boolean isImportant;
 	private int imptDuration;
 	private int seed;
-	private double deviation = Double.NaN;
+	private int imptTotalTime = 30;  // how long it will remain important
 	
 	public Human(int id, ContinuousSpace<Object> space, Grid<Object> grid, int angle, double speed, int seed) {
 		this.id = id;
@@ -50,25 +50,12 @@ public class Human {
 	//@ScheduledMethod(start = 1, interval = 1, priority = ScheduleParameters.FIRST_PRIORITY)
 	public void run() {		
 		// seed := currentSimulationTimeTick, repastSeedFromUser, humanID, humanSeedFromUser
-		String seedStr = Double.toString(RunEnvironment.getInstance().getCurrentSchedule().getTickCount()) + 
-				Double.toString(RandomHelper.getSeed()) + "seed" +
-				Integer.toString(this.id+1) + Integer.toString(this.seed);
-		int seed = new StringBuilder(seedStr).reverse().toString().hashCode();
+		int seed = calculateRandSeed();
 		Random randGen = new Random(seed);
-
 		
-		// add chaotic behavior
-		if (Double.isNaN(this.deviation)) {
-			NdPoint myPoint = space.getLocation(this);
-			this.deviation = Math.abs(Math.floor(myPoint.getX()) - myPoint.getX());
-		} else {
-			this.deviation = MyUtil.nextChaoticValue(this.deviation);
-		}
-
-		
-		double newDistance = speed + (deviation * 2 - 1) * (speed/5); 
-		double newAngleRad = Math.toRadians(angleDeg) + (deviation * 2 - 1) / 5;
-		
+		// add uncertainty to the new location
+		double newDistance = speed + (randGen.nextDouble() * 2 - 1) * (speed/2); 
+		double newAngleRad = Math.toRadians(angleDeg) + (randGen.nextDouble() * 2 - 1) / 2;
 		
 		space.moveByVector(this, newDistance, newAngleRad, 0);
 		NdPoint myPoint = space.getLocation(this);
@@ -77,12 +64,37 @@ public class Human {
 		// update angle if there is any bounce
 		this.angleDeg = MyUtil.returnBounceAngle(space, space.getLocation(this), this.angleDeg, this.speed);
 		
-		updateImportance(randGen);
+		updateImportance();
+	}
+
+	private int calculateRandSeed() {
+		String seedStr = Double.toString(RunEnvironment.getInstance().getCurrentSchedule().getTickCount()) + 
+				Double.toString(RandomHelper.getSeed()) + "seed" +
+				Integer.toString(this.id+1) + Integer.toString(this.seed);
+		int seed = new StringBuilder(seedStr).reverse().toString().hashCode();
+		return seed;
 	}
 	
-
 	
-
+	private void updateImportance() {
+		if (!isImportant) {
+			int currTime = (int) RunEnvironment.getInstance().getCurrentSchedule().getTickCount();
+			if (currTime % imptTotalTime == 1) { 
+				if ((currTime / imptTotalTime) % 2 == id % 2) { // integer division rounded towards zero
+					isImportant = true;
+					imptDuration = imptTotalTime;
+				}
+			}
+		} else {
+			imptDuration--;
+			if (imptDuration == 0) {
+				isImportant = false;
+			}
+		}
+	}
+	
+	
+	@Deprecated
 	private void updateImportance(Random randGen) {
 		
 		if (!isImportant) {
@@ -139,10 +151,19 @@ public class Human {
 		return imptDuration;
 	}
 	
-	public void setDuration(int duration) {
-		if (duration > 0) {
-			this.imptDuration = duration;
-			this.isImportant = true;
+	public void setDuration(int currTime, int deviation) {
+		if ((currTime / imptTotalTime) % 2 == id % 2) { 
+			
+			if (deviation < 0) {
+				deviation = -deviation;
+			}
+			if (deviation > imptTotalTime) {
+				deviation = deviation % imptTotalTime;
+			}
+			
+			isImportant = true;
+			imptDuration = imptTotalTime - currTime % imptTotalTime + 1;
+			imptDuration -= deviation;
 		}
 		
 	}
