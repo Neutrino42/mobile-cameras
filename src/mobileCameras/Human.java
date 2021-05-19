@@ -28,20 +28,26 @@ public class Human {
 	private int id;
 	private int angleDeg; // in degree
 	private double speed;
-	private boolean isImportant;
-	private int imptDuration;
+	private boolean isImportant = false;
+	private int imptDuration = 0;
 	private int seed;
 	private int imptTotalTime = 30;  // how long it will remain important
+	private boolean isRandomised;
 	
-	public Human(int id, ContinuousSpace<Object> space, Grid<Object> grid, int angle, double speed, int seed) {
+	// Constructor to be used by TraceBasedBuilder
+	public Human(int id, ContinuousSpace<Object> space, Grid<Object> grid, int angle, double speed, int seed, boolean isRandomised) {
 		this.id = id;
 		this.space = space;
 		this.grid = grid;
 		this.angleDeg = angle;
 		this.speed = speed;
-		this.isImportant = false;
-		this.imptDuration = 0;
 		this.seed = seed;
+		this.isRandomised = isRandomised;
+	}
+	
+	// Constructor to be used by JZombiesBuilder
+	public Human(int id, ContinuousSpace<Object> space, Grid<Object> grid, int angle, double speed, int seed) {
+		this(id, space, grid, angle, speed, seed, true);
 	}
 	
 	/*
@@ -49,13 +55,18 @@ public class Human {
 	 */
 	//@ScheduledMethod(start = 1, interval = 1, priority = ScheduleParameters.FIRST_PRIORITY)
 	public void run() {		
-		// seed := currentSimulationTimeTick, repastSeedFromUser, humanID, humanSeedFromUser
-		int seed = calculateRandSeed();
-		Random randGen = new Random(seed);
+		double newDistance = speed;
+		double newAngleRad = Math.toRadians(angleDeg);
 		
-		// add uncertainty to the new location
-		double newDistance = speed + (randGen.nextDouble() * 2 - 1) * (speed/2); 
-		double newAngleRad = Math.toRadians(angleDeg) + (randGen.nextDouble() * 2 - 1) / 2;
+		if (isRandomised) {
+			// seed := currentSimulationTimeTick, repastSeedFromUser, humanID, humanSeedFromUser
+			int seed = calculateRandSeed();
+			Random randGen = new Random(seed);
+			
+			// add uncertainty to the new location
+			newDistance = speed + (randGen.nextDouble() * 2 - 1) * (speed/2); 
+			newAngleRad = Math.toRadians(angleDeg) + (randGen.nextDouble() * 2 - 1) / 2;
+		} 
 		
 		space.moveByVector(this, newDistance, newAngleRad, 0);
 		NdPoint myPoint = space.getLocation(this);

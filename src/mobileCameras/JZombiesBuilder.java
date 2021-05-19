@@ -122,7 +122,7 @@ public class JZombiesBuilder implements ContextBuilder<Object> {
 		boolean redirectOutput = true;
 		if (redirectOutput) {
 			// Redirecting printing to file
-			String baseDir = "./trace_testtt/";
+			String baseDir = "./trace/";
 			String fileName = "sample.txt";
 			File directory = new File(baseDir);
 			if (! directory.exists()) {

@@ -123,13 +123,14 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 			location[0] = Double.parseDouble(humanInfo.getAttribute("x"));
 			location[1] = Double.parseDouble(humanInfo.getAttribute("y"));
 			
-			Human human = new Human(id, space, grid, angle, humanSpeed, humanSeed);
+			// !! Note that here we do not introduce randomness in human's behavior
+			Human human = new Human(id, space, grid, angle, humanSpeed, humanSeed, false);
 			context.add(human);
 
 			// if the human is important, estimate the importance duration
 			if (humanInfo.getAttribute("is_important").equals("true")) {
-				int deviation = 5;
-				human.setDuration(startTime, RandomHelper.nextIntFromTo(0, deviation)); 
+				int uncertainty = 5;
+				human.setDuration(startTime, RandomHelper.nextIntFromTo(0, uncertainty)); 
 			}
 			
 			
@@ -277,12 +278,12 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 		if (newX < 0) {
 			newX = 0;
 		} else if (newX > maxX) {
-			newX = maxX;
+			newX = maxX - 0.1;
 		}
 		if (newY < 0) {
 			newY = 0;
 		} else if (newY > maxY) {
-			newY = maxY;
+			newY = maxY - 0.1;
 		}
 		
 		return new double[] {newX, newY};
