@@ -160,6 +160,12 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 			int id = Integer.parseInt(cameraFromXML.getAttribute("id"));
 			double x = Double.parseDouble(cameraFromXML.getAttribute("x"));
 			double y = Double.parseDouble(cameraFromXML.getAttribute("y"));
+			if (x >= maxX) {
+				x = x - 0.01;
+			}
+			if (y >= maxY) {
+				y = y - 0.01;
+			}
 			
 			Stream<Object> s1 = context.getObjectsAsStream(Camera.class);
 			List<Object> cam = s1.filter(c -> ((Camera) c).getID() == id).collect(Collectors.toList());
