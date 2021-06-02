@@ -121,11 +121,11 @@ public class MyUtil {
 		
 		ScheduleParameters sp100 = ScheduleParameters.createRepeating(startTime, 1, 100);
 		ScheduleParameters sp1Every5 = ScheduleParameters.createRepeating(startTime2, 5, 1); // this one is different
-		ScheduleParameters spSecondLast = ScheduleParameters.createRepeating(startTime , 1, ScheduleParameters.LAST_PRIORITY + 1);
+		ScheduleParameters spSecondLast = ScheduleParameters.createRepeating(startTime-1 , 1, ScheduleParameters.LAST_PRIORITY + 1);
 		ScheduleParameters spFirst = ScheduleParameters.createRepeating(startTime, 1, ScheduleParameters.FIRST_PRIORITY);
 		ScheduleParameters sp3 = ScheduleParameters.createRepeating(startTime, 1, 3);
 		ScheduleParameters sp2 = ScheduleParameters.createRepeating(startTime, 1, 2);
-		ScheduleParameters spLast = ScheduleParameters.createRepeating(startTime, 1, ScheduleParameters.LAST_PRIORITY);
+		ScheduleParameters spLast = ScheduleParameters.createRepeating(startTime-1, 1, ScheduleParameters.LAST_PRIORITY);
 		
 		for (Object cam : camList) {
 			schedule.schedule(sp100, cam, "step");
