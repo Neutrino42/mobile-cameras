@@ -97,12 +97,13 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 		HashMap<Integer, Element> covObjMap = MyUtil.returnCoveredObjects(scenario);
 		HashMap<Integer, Element> uncovObjMap = MyUtil.returnUncoveredObjects(scenario);
 		
+		// https://stackoverflow.com/questions/6469969/pseudo-random-number-generator-from-two-inputs
 		// Use user provided seed when re-initializing humans
 		int seedOriginal = RandomHelper.getSeed();
 		
 		int scenarioTime = Integer.parseInt(((Element) scenario.getElementsByTagName("scenario").item(0)).getAttribute("time"));
 		int humanSeed = params.getInteger("user_seed");
-		int userInitSeed = (int) Math.pow(humanSeed, scenarioTime);
+		int userInitSeed = (humanSeed * 7919 + scenarioTime* 7057 + 17) ^ 13579;
 		RandomHelper.setSeed(userInitSeed);
 
 		

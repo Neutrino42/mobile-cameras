@@ -9,8 +9,9 @@ public class TestMain_2 {
 	public static void main(String[] args){
 		
 		double endTime = 1000.0;  // some arbitrary end time
-		args = new String[] { "/Users/Nann/eclipse-workspace/mobileCameras/mobileCameras.rs" };
-
+		if (args.length == 0) {
+			args = new String[] { "/Users/Nann/eclipse-workspace/mobileCameras/mobileCameras.rs" };
+		}
 		File file = new File(args[0]); // the scenario dir
 
 		TestRunner_2 runner = new TestRunner_2();
