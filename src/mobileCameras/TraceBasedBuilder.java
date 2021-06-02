@@ -123,6 +123,12 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 			int angle = Integer.parseInt(humanInfo.getAttribute("angle"));
 			location[0] = Double.parseDouble(humanInfo.getAttribute("x"));
 			location[1] = Double.parseDouble(humanInfo.getAttribute("y"));
+			if (location[0] >= maxX) {
+				location[0] = location[0] - 0.01;
+			}
+			if (location[1] >= maxY) {
+				location[1] = location[1] - 0.01;
+			}
 			
 			// !! Note that here we do not introduce randomness in human's behavior
 			Human human = new Human(id, space, grid, angle, humanSpeed, humanSeed, false);
