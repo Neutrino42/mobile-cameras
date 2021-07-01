@@ -168,10 +168,10 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 			double x = Double.parseDouble(cameraFromXML.getAttribute("x"));
 			double y = Double.parseDouble(cameraFromXML.getAttribute("y"));
 			if (x >= maxX) {
-				x = x - 0.01;
+				x = maxX - 0.01;
 			}
 			if (y >= maxY) {
-				y = y - 0.01;
+				y = maxY - 0.01;
 			}
 			
 			Stream<Object> s1 = context.getObjectsAsStream(Camera.class);
