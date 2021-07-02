@@ -96,7 +96,7 @@ public class JZombiesBuilder implements ContextBuilder<Object> {
 		}
 		
 		for (int i = 0; i < humanCount; i++) {
-			int angle = RandomHelper.nextIntFromTo(0, 4) * 90;
+			int angle = 90;
 			context.add(new Human(i, space, grid, angle, humanSpeed, userSeed));
 		}
 		

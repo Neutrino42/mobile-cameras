@@ -27,6 +27,7 @@ public class Human {
 	
 	private int id;
 	private int angleDeg; // in degree
+	private int angleDegLog; // the angle used for printing trace log
 	private double speed;
 	private boolean isImportant = false;
 	private int imptDuration = 0;
@@ -40,9 +41,15 @@ public class Human {
 		this.space = space;
 		this.grid = grid;
 		this.angleDeg = angle;
+		this.angleDegLog = angle;
+		
 		this.speed = speed;
 		this.seed = seed;
 		this.isRandomised = isRandomised;
+		
+		if (isRandomised) {
+			this.angleDeg = angle + 10;
+		}
 	}
 	
 	// Constructor to be used by JZombiesBuilder
@@ -58,23 +65,14 @@ public class Human {
 		double newDistance = speed;
 		double newAngleRad = Math.toRadians(angleDeg);
 		
-		if (isRandomised) {
-			// seed := currentSimulationTimeTick, repastSeedFromUser, humanID, humanSeedFromUser
-			int seed = calculateRandSeed();
-			Random randGen = new Random(seed);
-			
-			// add uncertainty to the new location
-			newDistance = speed + (randGen.nextDouble() * 2 - 1) * (speed/2); 
-			newAngleRad = Math.toRadians(angleDeg) + (randGen.nextDouble() * 2 - 1) / 2;
-		} 
-		
 		space.moveByVector(this, newDistance, newAngleRad, 0);
 		NdPoint myPoint = space.getLocation(this);
 		grid.moveTo(this, (int)myPoint.getX(), (int)myPoint.getY());
 		
 		// update angle if there is any bounce
 		this.angleDeg = MyUtil.returnBounceAngle(space, space.getLocation(this), this.angleDeg, this.speed);
-		
+		this.angleDegLog = MyUtil.returnBounceAngle(space, space.getLocation(this), this.angleDegLog, this.speed);
+
 		updateImportance();
 	}
 
@@ -138,7 +136,7 @@ public class Human {
 	
 	public String toString() {
 		NdPoint myPoint = space.getLocation(this);
-		return String.format("{%d|%.2f|%.2f|%d|%s|%d}", this.id, myPoint.getX(), myPoint.getY(), this.angleDeg,
+		return String.format("{%d|%.2f|%.2f|%d|%s|%d}", this.id, myPoint.getX(), myPoint.getY(), this.angleDegLog,
 				String.valueOf(this.isImportant), this.imptDuration);
 	}
 	

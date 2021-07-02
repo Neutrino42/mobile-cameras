@@ -249,10 +249,11 @@ public class Camera {
 	}
 
 	private void follow(Human human) {
-		double humanAngle = human.getAngle();
-		double humanSpeed = human.getSpeed();
-		space.moveByVector(this, humanSpeed, Math.toRadians(humanAngle), 0);
+		NdPoint humanPoint = space.getLocation(human);
 		NdPoint myPoint = space.getLocation(this);
+		double angle = SpatialMath.calcAngleFor2DMovement(space, myPoint, humanPoint);
+		double humanSpeed = human.getSpeed();
+		space.moveByVector(this, humanSpeed, angle, 0);
 		grid.moveTo(this, (int)myPoint.getX(), (int)myPoint.getY());
 	}
 	
