@@ -134,17 +134,17 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 			Human human = new Human(id, space, grid, angle, humanSpeed, humanSeed, false);
 			context.add(human);
 
-			// if the human is important, estimate the importance duration
+			// if the human is important, set the importance duration without uncertainty
 			if (humanInfo.getAttribute("is_important").equals("true")) {
-				int uncertainty = 5;
+				int uncertainty = 0;
 				human.setDuration(startTime, RandomHelper.nextIntFromTo(0, uncertainty)); 
 			}
 			
 			
 			// Particularly, if the human is uncovered, estimate its location and importance
 			if (uncovObjMap.containsKey(id)){
-				double deltaX = RandomHelper.nextDoubleFromTo(-5,5);
-				double deltaY = RandomHelper.nextDoubleFromTo(-5,5);
+				double deltaX = RandomHelper.nextDoubleFromTo(-0.1,0.1);
+				double deltaY = RandomHelper.nextDoubleFromTo(-0.1,0.1);
 				location = estimateLocation(location, deltaX, deltaY);
 			}
 			
