@@ -92,12 +92,16 @@ public class JZombiesBuilder implements ContextBuilder<Object> {
 		int humanCount = params.getInteger("human_count");
 
 		for (int i = 0; i < zombieCount; i++) {
-			context.add(new Camera(i, space, grid, cameraRange));
+			Camera cc = new Camera(i, space, grid, cameraRange);
+			context.add(cc);
+			space.moveByVector(cc, 30, 0, 0);
 		}
 		
 		for (int i = 0; i < humanCount; i++) {
 			int angle = 90;
-			context.add(new Human(i, space, grid, angle, humanSpeed, userSeed));
+			Human h = new Human(i, space, grid, angle, humanSpeed, userSeed);
+			context.add(h);
+			space.moveTo(h, new double[] {maxX-5 -5 * (i%2), i * maxY/humanCount +0.01});
 		}
 		
 		// add edge with weight 0 to every pair of cameras

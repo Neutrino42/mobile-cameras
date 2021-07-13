@@ -48,7 +48,8 @@ public class Human {
 		this.isRandomised = isRandomised;
 		
 		if (isRandomised) {
-			this.angleDeg = angle + 10;
+			this.angleDeg = angle + 3;
+			this.speed = speed / Math.cos(Math.toRadians(3));
 		}
 	}
 	
@@ -86,20 +87,16 @@ public class Human {
 	
 	
 	private void updateImportance() {
-		if (!isImportant) {
-			int currTime = (int) RunEnvironment.getInstance().getCurrentSchedule().getTickCount();
-			if (currTime % imptTotalTime == 1) { 
-				if ((currTime / imptTotalTime) % 2 == id % 2) { // integer division rounded towards zero
-					isImportant = true;
-					imptDuration = imptTotalTime;
-				}
-			}
+		int currTime = (int) RunEnvironment.getInstance().getCurrentSchedule().getTickCount();
+		if ((currTime / imptTotalTime) % 2 == id % 2) { // integer division rounded towards zero
+			isImportant = true;
+			imptDuration = -1;
 		} else {
-			imptDuration--;
-			if (imptDuration == 0) {
-				isImportant = false;
-			}
+			isImportant = false;
+			imptDuration = 0;
 		}
+				
+			
 	}
 	
 	
