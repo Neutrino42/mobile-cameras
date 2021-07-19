@@ -86,8 +86,20 @@ public class Human {
 		return seed;
 	}
 	
-	
 	private void updateImportance() {
+		int currTime = (int) RunEnvironment.getInstance().getCurrentSchedule().getTickCount();
+		if ((currTime / imptTotalTime) % 2 == id % 2) { // integer division rounded towards zero
+			isImportant = true;
+			imptDuration = -1;
+		} else {
+			isImportant = false;
+			imptDuration = 0;
+		}
+	}
+	
+	@Deprecated
+	private void updateImportanceOld() {
+		
 		if (!isImportant) {
 			int currTime = (int) RunEnvironment.getInstance().getCurrentSchedule().getTickCount();
 			if (currTime % imptTotalTime == 1) { 
