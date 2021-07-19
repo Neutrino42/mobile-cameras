@@ -91,14 +91,8 @@ public class JZombiesBuilder implements ContextBuilder<Object> {
 		int zombieCount = params.getInteger("camera_count");
 		int humanCount = params.getInteger("human_count");
 
-		for (int i = 0; i < zombieCount; i++) {
-			context.add(new Camera(i, space, grid, cameraRange));
-		}
-		
-		for (int i = 0; i < humanCount; i++) {
-			int angle = RandomHelper.nextIntFromTo(0, 4) * 90;
-			context.add(new Human(i, space, grid, angle, humanSpeed, userSeed));
-		}
+		addCameras(context, space, grid, zombieCount);
+		addHumans(context, space, grid, humanCount);
 		
 		// add edge with weight 0 to every pair of cameras
 		Stream<Object> s = context.getObjectsAsStream(Camera.class);
@@ -143,6 +137,23 @@ public class JZombiesBuilder implements ContextBuilder<Object> {
 	    
 		return context;
 	}
+
+
+	private void addCameras(Context<Object> context, ContinuousSpace<Object> space, Grid<Object> grid,
+			int zombieCount) {
+		for (int i = 0; i < zombieCount; i++) {
+			context.add(new Camera(i, space, grid, cameraRange));
+		}
+	}
+
+
+	private void addHumans(Context<Object> context, ContinuousSpace<Object> space, Grid<Object> grid, int humanCount) {
+		for (int i = 0; i < humanCount; i++) {
+			int angle = RandomHelper.nextIntFromTo(0, 4) * 90;
+			context.add(new Human(i, space, grid, angle, humanSpeed, userSeed));
+		}
+	}
+
 	
 
 }
