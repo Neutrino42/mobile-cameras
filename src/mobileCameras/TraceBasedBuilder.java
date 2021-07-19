@@ -222,22 +222,41 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 		// Add edge with input weight to every pair of cameras
 		Stream<Object> s2 = context.getObjectsAsStream(Camera.class);
 		List<Object> camList = s2.collect(Collectors.toList());
-		NodeList edgeListFromXML = scenario.getElementsByTagName("edge");
+		
+		Boolean updateKnowledge;
+		try {
+			updateKnowledge = params.getBoolean("update_knowledge");
+		} catch (repast.simphony.parameter.IllegalParameterException e) {
+			// if there is no such a parameter in `parameters.xml`
+			updateKnowledge = true;
+		}
+		System.out.println(updateKnowledge);
+		if(updateKnowledge) {
+			// add edge weight according to XML file
+			NodeList edgeListFromXML = scenario.getElementsByTagName("edge");
+			assert ((camList.size() - 1) * camList.size() / 2 == edgeListFromXML.getLength());
+			
+			for (int i = 0; i < edgeListFromXML.getLength(); i++) {
+				Element edgeFromXML = (Element) edgeListFromXML.item(i);
+				int sourceID = Integer.parseInt(edgeFromXML.getAttribute("source_id"));
+				int targetID = Integer.parseInt(edgeFromXML.getAttribute("target_id"));
+				double strength = Double.parseDouble(edgeFromXML.getAttribute("strength"));
 
-		assert ((camList.size() - 1) * camList.size() / 2 == edgeListFromXML.getLength());
+				s2 = context.getObjectsAsStream(Camera.class);
+				Object camSource = s2.filter(c -> ((Camera) c).getID() == sourceID).collect(Collectors.toList()).get(0);
+				s2 = context.getObjectsAsStream(Camera.class);
+				Object camTarget = s2.filter(c -> ((Camera) c).getID() == targetID).collect(Collectors.toList()).get(0);
 
-		for (int i = 0; i < edgeListFromXML.getLength(); i++) {
-			Element edgeFromXML = (Element) edgeListFromXML.item(i);
-			int sourceID = Integer.parseInt(edgeFromXML.getAttribute("source_id"));
-			int targetID = Integer.parseInt(edgeFromXML.getAttribute("target_id"));
-			double strength = Double.parseDouble(edgeFromXML.getAttribute("strength"));
-
-			s2 = context.getObjectsAsStream(Camera.class);
-			Object camSource = s2.filter(c -> ((Camera) c).getID() == sourceID).collect(Collectors.toList()).get(0);
-			s2 = context.getObjectsAsStream(Camera.class);
-			Object camTarget = s2.filter(c -> ((Camera) c).getID() == targetID).collect(Collectors.toList()).get(0);
-
-			net.addEdge(camSource, camTarget, strength);
+				net.addEdge(camSource, camTarget, strength);
+			}
+		} else{
+			// add edge with weight 0 to every pair of cameras
+			while (camList.size() > 1) {
+				Object tmp = camList.remove(0);
+				for (Object cam : camList) {
+					net.addEdge(tmp, cam, 0);
+				}
+			}
 		}
 
 
