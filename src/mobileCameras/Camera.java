@@ -215,8 +215,11 @@ public class Camera {
 	}
 
 	private void randomWalk(double distance, Random randGen) {
-		double angle = (double)randGen.nextInt(360);
-		space.moveByVector(this, distance, Math.toRadians(angle), 0);
+		//double angle = (double)randGen.nextInt(360);
+		int currTime = (int) RunEnvironment.getInstance().getCurrentSchedule().getTickCount();
+		double rad = Math.toRadians(((currTime * 7919 + (this.id + 1)* 7057 + 17) ^ 13579) % 7 * (360/6));
+		//double rad = Math.toRadians((currTime) % 4 * 90);
+		space.moveByVector(this, distance, rad , 0);
 		NdPoint myPoint = space.getLocation(this);
 		grid.moveTo(this, (int)myPoint.getX(), (int)myPoint.getY());
 		
@@ -249,10 +252,11 @@ public class Camera {
 	}
 
 	private void follow(Human human) {
-		double humanAngle = human.getAngle();
-		double humanSpeed = human.getSpeed();
-		space.moveByVector(this, humanSpeed, Math.toRadians(humanAngle), 0);
+		NdPoint humanPoint = space.getLocation(human);
 		NdPoint myPoint = space.getLocation(this);
+		double angle = SpatialMath.calcAngleFor2DMovement(space, myPoint, humanPoint);
+		double humanSpeed = human.getSpeed();
+		space.moveByVector(this, humanSpeed, angle, 0);
 		grid.moveTo(this, (int)myPoint.getX(), (int)myPoint.getY());
 	}
 	
