@@ -92,7 +92,7 @@ public class JZombiesBuilder implements ContextBuilder<Object> {
 		int humanCount = params.getInteger("human_count");
 
 		addCameras(context, space, grid, zombieCount);
-		addHumans(context, space, grid, humanCount);
+		addHumans(context, space, grid, humanCount, false);
 		
 		// add edge with weight 0 to every pair of cameras
 		Stream<Object> s = context.getObjectsAsStream(Camera.class);
@@ -147,12 +147,110 @@ public class JZombiesBuilder implements ContextBuilder<Object> {
 	}
 
 
-	private void addHumans(Context<Object> context, ContinuousSpace<Object> space, Grid<Object> grid, int humanCount) {
+	private void addHumans(Context<Object> context, ContinuousSpace<Object> space, Grid<Object> grid, int humanCount, boolean isRandomised) {
 		for (int i = 0; i < humanCount; i++) {
 			int angle = RandomHelper.nextIntFromTo(0, 4) * 90;
-			context.add(new Human(i, space, grid, angle, humanSpeed, userSeed));
+			context.add(new Human(i, space, grid, angle, humanSpeed, userSeed, isRandomised));
 		}
 	}
+	
+	private void addHumans_1(Context<Object> context, ContinuousSpace<Object> space, Grid<Object> grid, int humanCount, boolean isRandomised) {
+		for (int i = 0; i < humanCount; i++) {
+			int angle = 90;
+			Human h = new Human(i, space, grid, angle, humanSpeed, userSeed, isRandomised);
+			context.add(h);
+			space.moveTo(h, new double[] {maxX-5 -5 * (i%2), i * maxY/humanCount +0.01});
+		}
+	}
+	
+	private void addHumans_2(Context<Object> context, ContinuousSpace<Object> space, Grid<Object> grid, int humanCount, boolean isRandomised) {
+		for (int i = 0; i < humanCount; i++) {
+			int angle;
+			if (i % 2 == 0) {
+				angle = 90;
+			} else {
+				angle = 270;
+			}
+			
+			Human h = new Human(i, space, grid, angle, humanSpeed, userSeed, isRandomised);
+			context.add(h);
+			
+			if (i % 2 ==0) {
+				space.moveTo(h, new double[] {maxX/humanCount * (i/2 + 0.5), maxY/humanCount * (i/2+0.5)});
+			} else {
+				space.moveTo(h, new double[] {maxX/humanCount * (i/2 + 0.5) + maxX/2, maxY/humanCount * (i/2+0.5) + maxY/2});
+			}
+			
+		}
+	}
+	
+	private void addHumans_3(Context<Object> context, ContinuousSpace<Object> space, Grid<Object> grid, int humanCount, boolean isRandomised) {
+		for (int i = 0; i < humanCount; i++) {
+			int angle;
+			if (i%2==0) {
+				angle = 90;
+			} else {
+				angle = 0;
+			}
+			
+			Human h = new Human(i, space, grid, angle, humanSpeed, userSeed, isRandomised);
+			context.add(h);
+				
+			if (i % 2 ==0) {
+				space.moveTo(h, new double[] {maxX/2 + maxX/humanCount * (i/2 + 0.5), maxY/humanCount * (i/2+0.5) + maxY/4});
+			} else {
+				space.moveTo(h, new double[] {maxX/humanCount * (i/2 + 0.5), maxY/humanCount * (i/2+0.5) + maxY/2});
+			}
+			
+		}
+	}
+		
+	private void addHumans_4(Context<Object> context, ContinuousSpace<Object> space, Grid<Object> grid, int humanCount, boolean isRandomised) {
+		for (int i = 0; i < humanCount; i++) {
+			int angle;
+			if (i < humanCount/2) {
+				angle = 0;
+			} else {
+				angle = 90;
+			}
+			
+			Human h = new Human(i, space, grid, angle, humanSpeed, userSeed, isRandomised);
+			context.add(h);
+				
+			
+			if (i < humanCount/2) {
+				if (i%2 == 0) {
+					double[] pos = {5, 45 - i/2 * 6};
+					space.moveTo(h, pos);
+					System.out.println(i);
+					System.out.println(pos[0]);
+					System.out.println(pos[1]);
+				} else {
+					double[] pos = {11, 49.9 - i/2 * 6};
+					space.moveTo(h, pos);
+				}
+			} else {
+				if (i%2 == 0) {
+					double[] pos = {44 - (i-humanCount/2)/2 * 6, 15};
+					space.moveTo(h, pos);
+				} else {
+					double[] pos = {49.9 - (i-humanCount/2)/2 * 6, 9};
+					space.moveTo(h, pos);
+				}
+			}
+			
+			/*
+			if (i % 2 ==0) {
+				space.moveTo(h, new double[] {maxX/2 + maxX/humanCount * (i/2 + 0.5), maxY/humanCount * (i/2+0.5) + maxY/4});
+			} else {
+				space.moveTo(h, new double[] {maxX/humanCount * (i/2 + 0.5), maxY/humanCount * (i/2+0.5) + maxY/2});
+			}
+			*/
+			
+		}
+	}
+	
+
 
 	
 
