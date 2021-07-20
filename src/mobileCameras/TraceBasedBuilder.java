@@ -142,10 +142,17 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 			
 			
 			// Particularly, if the human is uncovered, estimate its location and importance
-			if (uncovObjMap.containsKey(id)){
-				//double deltaX = RandomHelper.nextDoubleFromTo(-0.1,0.1);
-				//double deltaY = RandomHelper.nextDoubleFromTo(-0.1,0.1);
-				//location = estimateLocation(location, deltaX, deltaY);
+			double humanPositionUncertainty;
+			try {
+				humanPositionUncertainty = params.getInteger("human_position_uncertainty");
+			} catch (repast.simphony.parameter.IllegalParameterException e) {
+				// if there is no such a parameter in `parameters.xml`
+				humanPositionUncertainty = 0;
+			}
+			if (humanPositionUncertainty > 0 && uncovObjMap.containsKey(id)){
+				double deltaX = RandomHelper.nextDoubleFromTo(-humanPositionUncertainty, humanPositionUncertainty);
+				double deltaY = RandomHelper.nextDoubleFromTo(-humanPositionUncertainty, humanPositionUncertainty);
+				location = estimateLocation(location, deltaX, deltaY);
 			}
 			
 			// Decide the human's location
