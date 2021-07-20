@@ -145,6 +145,14 @@ public class JZombiesBuilder implements ContextBuilder<Object> {
 			context.add(new Camera(i, space, grid, cameraRange));
 		}
 	}
+	
+	private void addCameras_1(Context<Object> context, ContinuousSpace<Object> space, Grid<Object> grid, int zombieCount) {
+		for (int i = 0; i < zombieCount; i++) {
+			Camera cc = new Camera(i, space, grid, cameraRange);
+			context.add(cc);
+			space.moveByVector(cc, 30, 0, 0);
+		}
+	}
 
 
 	private void addHumans(Context<Object> context, ContinuousSpace<Object> space, Grid<Object> grid, int humanCount, boolean isRandomised) {
