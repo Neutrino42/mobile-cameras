@@ -140,11 +140,11 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 				human.setDuration(startTime, RandomHelper.nextIntFromTo(0, uncertainty)); 
 			}
 			
-			
+			// TODO: refactoring, move it out of the FOR loop
 			// Particularly, if the human is uncovered, estimate its location and importance
 			double humanPositionUncertainty;
 			try {
-				humanPositionUncertainty = params.getInteger("human_position_uncertainty");
+				humanPositionUncertainty = params.getDouble("human_position_uncertainty");
 			} catch (repast.simphony.parameter.IllegalParameterException e) {
 				// if there is no such a parameter in `parameters.xml`
 				humanPositionUncertainty = 0;
