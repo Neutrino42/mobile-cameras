@@ -171,6 +171,23 @@ public class JZombiesBuilder implements ContextBuilder<Object> {
 		}
 	}
 	
+	private void addHumans_1_2(Context<Object> context, ContinuousSpace<Object> space, Grid<Object> grid, int humanCount, boolean isRandomised) {
+		for (int i = 0; i < humanCount; i=i+2) {
+			int angle = 90;
+			Human h = new Human(i, space, grid, angle, humanSpeed, userSeed, isRandomised);
+			context.add(h);
+			space.moveTo(h, new double[] {maxX-5 -10*((i/2)%2), i * maxY/humanCount/2 +0.01});
+			
+		}
+		for (int i = 1; i < humanCount; i=i+2) {
+			int angle = 90;
+			Human h = new Human(i, space, grid, angle, humanSpeed, userSeed, isRandomised);
+			context.add(h);
+			space.moveTo(h, new double[] {maxX-5 -10*(((i+1)/2)%2), i * maxY/humanCount/2 + maxY/2 -0.01});
+			
+		}
+	}
+	
 	private void addHumans_2(Context<Object> context, ContinuousSpace<Object> space, Grid<Object> grid, int humanCount, boolean isRandomised) {
 		for (int i = 0; i < humanCount; i++) {
 			int angle;
