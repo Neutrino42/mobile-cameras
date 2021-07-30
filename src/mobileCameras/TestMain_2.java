@@ -8,11 +8,15 @@ public class TestMain_2 {
 
 	public static void main(String[] args){
 		
-		double endTime = 1000.0;  // some arbitrary end time
 		if (args.length == 0) {
 			args = new String[] { "/Users/Nann/eclipse-workspace/mobileCameras/mobileCameras.rs" };
 		}
 		File file = new File(args[0]); // the scenario dir
+		
+		double endTime = 1000.0;  // some arbitrary end time
+		if (args.length == 2) {
+			endTime = Double.parseDouble(args[1]); 
+		}
 
 		TestRunner_2 runner = new TestRunner_2();
 
