@@ -91,8 +91,8 @@ public class JZombiesBuilder implements ContextBuilder<Object> {
 		int zombieCount = params.getInteger("camera_count");
 		int humanCount = params.getInteger("human_count");
 
-		addCameras(context, space, grid, zombieCount);
-		addHumans(context, space, grid, humanCount, false);
+		addCameras_1(context, space, grid, zombieCount);
+		addHumans_1_2(context, space, grid, humanCount, false);
 		
 		// add edge with weight 0 to every pair of cameras
 		Stream<Object> s = context.getObjectsAsStream(Camera.class);

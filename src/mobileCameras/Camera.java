@@ -62,7 +62,6 @@ public class Camera {
 		NdPoint myNdPt = space.getLocation(this);
 
 		// find the human within the circular range
-
 		Stream<Object> s = context.getObjectsAsStream(Human.class);
 		List<Object> newCoveredHumans = s.filter(human -> space.getDistance(myNdPt, space.getLocation(human)) < range)
 				.collect(Collectors.toList());
@@ -80,22 +79,6 @@ public class Camera {
 		}
 
 		coveredHumans = newCoveredHumans;
-		/*
-		// Collect trace
-		String out = String.format("%.1f,", RunEnvironment.getInstance().getCurrentSchedule().getTickCount());
-		out += "cam,";
-		NdPoint myPoint = space.getLocation(this);
-		out += String.format("%d,[%.2f,%.2f],objs:", this.id, myPoint.getX(), myPoint.getY());
-		for (Object human: coveredHumans) {
-			out += String.format("%s,",human.toString());
-		}
-		out += "msg:";
-		for (Message msg : receivedMsg) {
-			out += msg.toString() + ",";
-		}
-		System.out.println(out);
-		*/
-		
 	}
 	
 	/*

@@ -13,7 +13,7 @@ public class TestMain_2 {
 		}
 		File file = new File(args[0]); // the scenario dir
 		
-		double endTime = 1000.0;  // some arbitrary end time
+		double endTime = 1000.0;  // default end time
 		if (args.length == 2) {
 			endTime = Double.parseDouble(args[1]); 
 		}

@@ -82,7 +82,7 @@ public class MyUtil {
 		return doc;
 	}
 	
-	public static HashMap<Integer, Element> returnCoveredObjects(Document scenario) {
+	public static HashMap<Integer, Element> parseCoveredHumans(Document scenario) {
 		HashMap<Integer, Element> objMap = new HashMap<>();
 
 		NodeList cameraList = scenario.getElementsByTagName("camera");
@@ -97,7 +97,7 @@ public class MyUtil {
 		return objMap;
 	}
 
-	public static HashMap<Integer, Element> returnUncoveredObjects(Document scenario) {
+	public static HashMap<Integer, Element> parseUncoveredHumans(Document scenario) {
 		HashMap<Integer, Element> objMap = new HashMap<>();
 
 		Element listNode = (Element) scenario.getElementsByTagName("uncovered_objects").item(0);
@@ -142,6 +142,27 @@ public class MyUtil {
 		schedule.schedule(spLast, context, "collectTraceForEnv");
 		
 	}
+	
+	
+	public static double[] updateByBoundaryCheck(double x, double y, double maxX, double maxY) {
+		double newX = x;
+		double newY = y;
+		// check world boundary
+		if (x < 0) {
+			newX = 0;
+		}
+		if (x >= maxX) {
+			newX = maxX - 0.01;
+		}
+		if (y < 0) {
+			newY = 0;
+		}
+		if (y >= maxY) {
+			newY = maxY - 0.01;
+		}
+		return new double[] {newX, newY};
+	}
+	
 	
 	public static double nextChaoticValue(double x) {
 		if (x < 0) {

@@ -41,7 +41,7 @@ import repast.simphony.space.grid.SimpleGridAdder;
  * To use this builder, first run the repast,
  * Then in the GUI set Data Loaders,
  * In the "Select Data Source Type" window, click "Custom ContextBuilder Implementation"
- * The select this java class
+ * Then select this java class
  * 
  * @author Nann
  *
@@ -80,55 +80,61 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 		Grid<Object> grid = gridFactory.createGrid("grid", context,
 				new GridBuilderParameters<Object>(new BouncyBorders(), new SimpleGridAdder<Object>(), true, (int)maxX, (int)maxY));
 		
+		// Parse parameters.xml
 		Parameters params = RunEnvironment.getInstance().getParameters();
-			
-		String initScenario = params.getString("init_scenario_path");
-		Document scenario = MyUtil.parseScenarioXML(initScenario);
-
-		int zombieCount = params.getInteger("camera_count");
-		for (int i = 0; i < zombieCount; i++) {
-			context.add(new Camera(i, space, grid, cameraRange));
+		String scenarioPath = params.getString("init_scenario_path");
+		int humanCount = params.getInteger("human_count");
+		int cameraCount = params.getInteger("camera_count");
+		int humanSeed = params.getInteger("user_seed");
+		double humanPositionUncertainty;
+		try {
+			humanPositionUncertainty = params.getDouble("human_position_uncertainty");
+		} catch (repast.simphony.parameter.IllegalParameterException e) {
+			// if there is no such a parameter in `parameters.xml`
+			humanPositionUncertainty = 0;
 		}
-
-		int startTime = 1 + Integer.parseInt(((Element) scenario.getElementsByTagName("scenario").item(0)).getAttribute("time"));
-
-
-		// Get all covered and uncovered objects from file
-		HashMap<Integer, Element> covObjMap = MyUtil.returnCoveredObjects(scenario);
-		HashMap<Integer, Element> uncovObjMap = MyUtil.returnUncoveredObjects(scenario);
+		Boolean updateKnowledge;
+		try {
+			updateKnowledge = params.getBoolean("update_knowledge");
+		} catch (repast.simphony.parameter.IllegalParameterException e) {
+			// if there is no such a parameter in `parameters.xml`
+			updateKnowledge = true;
+		}
+		System.out.println(updateKnowledge);
+		String outFile = params.getString("output_trace_path");
 		
+		
+		// Parse init_scenario xml file
+		Document scenario = MyUtil.parseScenarioXML(scenarioPath);
+		int startTime = 1 + Integer.parseInt(((Element) scenario.getElementsByTagName("scenario").item(0)).getAttribute("time"));
+		int scenarioTime = Integer.parseInt(((Element) scenario.getElementsByTagName("scenario").item(0)).getAttribute("time"));
+		HashMap<Integer, Element> covHumMap = MyUtil.parseCoveredHumans(scenario);
+		HashMap<Integer, Element> uncovHumMap = MyUtil.parseUncoveredHumans(scenario);
+		
+
 		// https://stackoverflow.com/questions/6469969/pseudo-random-number-generator-from-two-inputs
 		// Use user provided seed when re-initializing humans
-		int seedOriginal = RandomHelper.getSeed();
+		int seedOriginal = RandomHelper.getSeed();  // The seed is automatically loaded from parameters.xml
+		System.out.println(seedOriginal);
 		
-		int scenarioTime = Integer.parseInt(((Element) scenario.getElementsByTagName("scenario").item(0)).getAttribute("time"));
-		int humanSeed = params.getInteger("user_seed");
 		int userInitSeed = (humanSeed * 7919 + scenarioTime* 7057 + 17) ^ 13579;
 		RandomHelper.setSeed(userInitSeed);
 
-		
-		// Initialize human moving direction and position
-		int humanCount = params.getInteger("human_count");
+		// Initialize the environment: human moving direction and position
 		double[] location = new double[2];
-
 		for (int id = 0; id < humanCount; id++) {
 			// check whether the human is covered or uncovered
 			Element humanInfo = null;
-			if (covObjMap.containsKey(id)) {
-				humanInfo = covObjMap.get(id);
-			} else if (uncovObjMap.containsKey(id)){
-				humanInfo = uncovObjMap.get(id);
+			if (covHumMap.containsKey(id)) {
+				humanInfo = covHumMap.get(id);
+			} else if (uncovHumMap.containsKey(id)){
+				humanInfo = uncovHumMap.get(id);
 			}
 			
 			int angle = Integer.parseInt(humanInfo.getAttribute("angle"));
 			location[0] = Double.parseDouble(humanInfo.getAttribute("x"));
 			location[1] = Double.parseDouble(humanInfo.getAttribute("y"));
-			if (location[0] >= maxX) {
-				location[0] = location[0] - 0.01;
-			}
-			if (location[1] >= maxY) {
-				location[1] = location[1] - 0.01;
-			}
+			location = MyUtil.updateByBoundaryCheck(location[0], location[1], maxX, maxY);
 			
 			// !! Note that here we do not introduce randomness in human's behavior
 			Human human = new Human(id, space, grid, angle, humanSpeed, humanSeed, false);
@@ -140,64 +146,54 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 				human.setDuration(startTime, RandomHelper.nextIntFromTo(0, uncertainty)); 
 			}
 			
-			// TODO: refactoring, move it out of the FOR loop
 			// Particularly, if the human is uncovered, estimate its location and importance
-			double humanPositionUncertainty;
-			try {
-				humanPositionUncertainty = params.getDouble("human_position_uncertainty");
-			} catch (repast.simphony.parameter.IllegalParameterException e) {
-				// if there is no such a parameter in `parameters.xml`
-				humanPositionUncertainty = 0;
-			}
-			if (humanPositionUncertainty > 0 && uncovObjMap.containsKey(id)){
+			if (humanPositionUncertainty > 0 && uncovHumMap.containsKey(id)){
 				double deltaX = RandomHelper.nextDoubleFromTo(-humanPositionUncertainty, humanPositionUncertainty);
 				double deltaY = RandomHelper.nextDoubleFromTo(-humanPositionUncertainty, humanPositionUncertainty);
 				location = estimateLocation(location, deltaX, deltaY);
 			}
 			
-			// Decide the human's location
+			// Initialize the human's location
 			space.moveTo(human, location);
 			
 		}
 		
 		// set back to default seed for cameras
 		RandomHelper.setSeed(seedOriginal);
-		
 
-		// Initialize camera position, messages, covered humans
-		NodeList cameraListFromXML = scenario.getElementsByTagName("camera");
 		
-		assert (zombieCount == cameraListFromXML.getLength());
+		// Initialize the cameras: position, messages, covered humans
+		for (int i = 0; i < cameraCount; i++) {
+			context.add(new Camera(i, space, grid, cameraRange));
+		}
+		
+		NodeList cameraListFromXML = scenario.getElementsByTagName("camera");
+		assert (cameraCount == cameraListFromXML.getLength());
 
 		for (int i = 0; i < cameraListFromXML.getLength(); i++) {
 			Element cameraFromXML = (Element) cameraListFromXML.item(i);
 			int id = Integer.parseInt(cameraFromXML.getAttribute("id"));
-			double x = Double.parseDouble(cameraFromXML.getAttribute("x"));
-			double y = Double.parseDouble(cameraFromXML.getAttribute("y"));
-			if (x >= maxX) {
-				x = maxX - 0.01;
-			}
-			if (y >= maxY) {
-				y = maxY - 0.01;
-			}
+			location[0] = Double.parseDouble(cameraFromXML.getAttribute("x"));
+			location[1] = Double.parseDouble(cameraFromXML.getAttribute("y"));
+			location = MyUtil.updateByBoundaryCheck(location[0], location[1], maxX, maxY);
 			
 			Stream<Object> s1 = context.getObjectsAsStream(Camera.class);
 			List<Object> cam = s1.filter(c -> ((Camera) c).getID() == id).collect(Collectors.toList());
 			assert (cam.size() == 1);
 			
 			// initialize camera position
-			space.moveTo(cam.get(0), new double[] { x, y });
+			space.moveTo(cam.get(0), location);
 			
 			// initialize covered humans for the camera
 			List<Object> newCoveredHumans = new ArrayList<>();
-			NodeList objectList = cameraFromXML.getElementsByTagName("object");
-			for (int j = 0; j < objectList.getLength(); j++) {
-				Element obj = (Element) objectList.item(j);
-				int idObj = Integer.parseInt(obj.getAttribute("id"));
+			NodeList humanList = cameraFromXML.getElementsByTagName("object");
+			for (int j = 0; j < humanList.getLength(); j++) {
+				Element hum = (Element) humanList.item(j);
+				int idHum = Integer.parseInt(hum.getAttribute("id"));
 				
 				Stream<Object> ss = context.getObjectsAsStream(Human.class);
-				List<Object> objCov = ss.filter(h -> ((Human) h).getID() == idObj).collect(Collectors.toList());
-				newCoveredHumans.add(objCov.get(0));
+				List<Object> humCov = ss.filter(h -> ((Human) h).getID() == idHum).collect(Collectors.toList());
+				newCoveredHumans.add(humCov.get(0));
 			}
 			((Camera) cam.get(0)).setCoveredHumans(newCoveredHumans);
 			
@@ -209,35 +205,24 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 				Element msgFromXML = (Element) msgListFromXML.item(j);
 				int msgTime = Integer.parseInt(msgFromXML.getAttribute("time"));
 				int msgSender = Integer.parseInt(msgFromXML.getAttribute("camera_id"));
-				int msgObj = Integer.parseInt(msgFromXML.getAttribute("object_id"));
+				int msgHum = Integer.parseInt(msgFromXML.getAttribute("object_id"));
 				
 				s1 = context.getObjectsAsStream(Camera.class);
 				List<Object> sender = s1.filter(c -> ((Camera) c).getID() == msgSender).collect(Collectors.toList());
 				assert sender.size() == 1;
 				
 				Stream<Object> sh = context.getObjectsAsStream(Human.class);
-				List<Object> covObject = sh.filter(h -> ((Human) h).getID() == msgObj).collect(Collectors.toList());
-				assert covObject.size() == 1;
-				Human tmph = (Human) covObject.get(0);
-				Camera tmp = (Camera) sender.get(0);
-				
-				((Camera) cam.get(0)).receiveMsg(new Message(msgTime, (Camera) (sender.get(0)), (Human) (covObject.get(0))));
+				List<Object> covHuman = sh.filter(h -> ((Human) h).getID() == msgHum).collect(Collectors.toList());
+				assert covHuman.size() == 1;
+				((Camera) cam.get(0)).receiveMsg(new Message(msgTime, (Camera) (sender.get(0)), (Human) (covHuman.get(0))));
 			}
 		}
 		
 
-		// Add edge with input weight to every pair of cameras
+		// Add edge weight to every pair of cameras
 		Stream<Object> s2 = context.getObjectsAsStream(Camera.class);
 		List<Object> camList = s2.collect(Collectors.toList());
-		
-		Boolean updateKnowledge;
-		try {
-			updateKnowledge = params.getBoolean("update_knowledge");
-		} catch (repast.simphony.parameter.IllegalParameterException e) {
-			// if there is no such a parameter in `parameters.xml`
-			updateKnowledge = true;
-		}
-		System.out.println(updateKnowledge);
+
 		if(updateKnowledge) {
 			// add edge weight according to XML file
 			NodeList edgeListFromXML = scenario.getElementsByTagName("edge");
@@ -285,7 +270,6 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 			if (!directory.exists()) {
 				directory.mkdir();
 			}
-			String outFile = params.getString("output_trace_path");
 
 			File file = new File(outFile);
 			if (!file.exists()) {
