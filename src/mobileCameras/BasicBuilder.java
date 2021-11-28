@@ -50,7 +50,7 @@ import repast.simphony.util.ContextUtils;
  * 
  */
 
-public class JZombiesBuilder implements ContextBuilder<Object> {
+public class BasicBuilder implements ContextBuilder<Object> {
 	// size of the world, origin (0,0)
 	private double maxX = 50;
 	private double maxY = 50;
@@ -91,8 +91,8 @@ public class JZombiesBuilder implements ContextBuilder<Object> {
 		int zombieCount = params.getInteger("camera_count");
 		int humanCount = params.getInteger("human_count");
 
-		addCameras_1(context, space, grid, zombieCount);
-		addHumans_1_2(context, space, grid, humanCount, false);
+		addCameras(context, space, grid, zombieCount);
+		addHumans(context, space, grid, humanCount, false);
 		
 		// add edge with weight 0 to every pair of cameras
 		Stream<Object> s = context.getObjectsAsStream(Camera.class);

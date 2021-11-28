@@ -43,6 +43,7 @@ public class Camera {
 	private double maxSpeed;
 	private List<Object> coveredHumans;
 	private List<Message> receivedMsg;
+	private String actionLog;
 	
 	public static int K = 3; // k for k-coverage
 
@@ -86,6 +87,7 @@ public class Camera {
 	 */
 	//@ScheduledMethod(start = 1, interval = 1, priority = 100)
 	public void step() {
+		this.actionLog = "";
 		Context<Object> context = ContextUtils.getContext(this);
 		Network<Object> covNet = (Network<Object>) context.getProjection("coverage network");
 		/*
@@ -148,6 +150,7 @@ public class Camera {
 		for (Message msg : receivedMsg) {
 			out += "," + msg.toString();
 		}
+		out += "," + "act,{" + this.actionLog + "}";
 		System.out.println(out);
 		
 	}
@@ -166,6 +169,7 @@ public class Camera {
 		commNet.getEdges(this).forEach(orderedEdgeList::add);
 		orderedEdgeList.sort(Comparator.comparingDouble(RepastEdge<Object>::getWeight).reversed());
 		
+		this.actionLog += "n|";
 		// loop for k-1 best cameras to pass message
 		for (int i = 0; i < K-1; i++) {
 			RepastEdge<Object> edge = orderedEdgeList.get(i);
@@ -189,6 +193,7 @@ public class Camera {
 			double currTime = RunEnvironment.getInstance().getCurrentSchedule().getTickCount();
 			nghCamera.receiveMsg(new Message(currTime, this, human));
 			
+			this.actionLog += nghCamera.getID() + "|";
 		}
 		
 	}
@@ -205,6 +210,7 @@ public class Camera {
 		space.moveByVector(this, distance, rad , 0);
 		NdPoint myPoint = space.getLocation(this);
 		grid.moveTo(this, (int)myPoint.getX(), (int)myPoint.getY());
+		this.actionLog += "rand";
 		
 	}
 
@@ -228,6 +234,7 @@ public class Camera {
 		}
 		
 		moveTowards(space.getLocation(targetHum), 2);
+		this.actionLog += "re|"+ targetCam.getID() + "|" + targetHum.getID();
 		//System.out.print(this);
 		//System.out.print(" acdepts, and move to ");
 		//System.out.println(space.getLocation(targetHum));
@@ -241,6 +248,7 @@ public class Camera {
 		double humanSpeed = human.getSpeed();
 		space.moveByVector(this, humanSpeed, angle, 0);
 		grid.moveTo(this, (int)myPoint.getX(), (int)myPoint.getY());
+		this.actionLog += "f|"+human.getID();
 	}
 	
 	

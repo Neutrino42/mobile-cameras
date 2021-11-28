@@ -34,6 +34,11 @@ public class TestRunner_2 extends AbstractRunner {
 		controller = new DefaultController(runEnvironmentBuilder);
 		controller.setScheduleRunner(this);
 	}
+	
+	public void load(String scenarioDir) throws Exception {
+		System.out.println(scenarioDir);
+		load(new File(scenarioDir));
+	}
 
 	public void load(File scenarioDir) throws Exception{
 		if (scenarioDir.exists()) {
