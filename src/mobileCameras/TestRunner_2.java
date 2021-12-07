@@ -36,7 +36,7 @@ public class TestRunner_2 extends AbstractRunner {
 	}
 	
 	public void load(String scenarioDir) throws Exception {
-		System.out.println(scenarioDir);
+		//System.out.println(scenarioDir);
 		load(new File(scenarioDir));
 	}
 
@@ -88,6 +88,23 @@ public class TestRunner_2 extends AbstractRunner {
 	public void step(){
     schedule.execute();
 	}
+	
+	// Run to the specified time step
+	public void runTo(double time) {
+		if (time <= RunEnvironment.getInstance().getCurrentSchedule().getTickCount()) {
+			return;
+		}
+		while (this.getActionCount() > 0){  // loop until last action is left
+			if (this.getModelActionCount() == 0) {
+				this.setFinishing(true);
+			}
+			this.step();  // execute all scheduled actions at next tick
+			
+			if (time <= RunEnvironment.getInstance().getCurrentSchedule().getTickCount()) {
+				break;
+			}
+		}
+	}
 
 	// stop the schedule
 	public void stop(){
@@ -103,4 +120,10 @@ public class TestRunner_2 extends AbstractRunner {
 		// required AbstractRunner stub.  We will control the
 		//  schedule directly.
 	}
+	
+	public void update() {
+		controller.runCleanup();
+		controller.batchCleanup();
+	}
+	
 }

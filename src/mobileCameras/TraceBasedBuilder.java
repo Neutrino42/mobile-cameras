@@ -2,6 +2,8 @@ package mobileCameras;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -59,8 +61,8 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 	@Override
 	public Context build(Context<Object> context) {
 		
-		System.setOut(System.out);
-		System.out.println("TraceBasedBuilder");
+		//System.setOut(System.out);
+		//System.out.println("TraceBasedBuilder");
 		
 		context = new MyContext();
 
@@ -100,7 +102,7 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 			// if there is no such a parameter in `parameters.xml`
 			updateKnowledge = true;
 		}
-		System.out.println(updateKnowledge);
+		//System.out.println(updateKnowledge);
 		String outFile = params.getString("output_trace_path");
 		
 		
@@ -115,7 +117,7 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 		// https://stackoverflow.com/questions/6469969/pseudo-random-number-generator-from-two-inputs
 		// Use user provided seed when re-initializing humans
 		int seedOriginal = RandomHelper.getSeed();  // The seed is automatically loaded from parameters.xml
-		System.out.println(seedOriginal);
+		//System.out.println(seedOriginal);
 		
 		int userInitSeed = (humanSeed * 7919 + scenarioTime* 7057 + 17) ^ 13579;
 		RandomHelper.setSeed(userInitSeed);
@@ -276,12 +278,12 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 				file.getParentFile().mkdirs();
 			}
 			
-			PrintStream stream;
+			//PrintStream stream;
 			try {
-				stream = new PrintStream(file);
-				System.out.println("All \"System.out\" is directed to " + file.getAbsolutePath());
-				System.out.flush();
-				System.setOut(stream);
+				//stream = new PrintStream(file);
+				//System.out.println("All \"System.out\" is directed to " + file.getAbsolutePath());
+				//System.out.flush();
+				System.setOut(new PrintStream(new FileOutputStream(outFile, true)));
 			} catch (FileNotFoundException e) {
 				System.out.println("FAILED to dreict system output to file " + file.getAbsolutePath());
 				// TODO Auto-generated catch block

@@ -80,6 +80,8 @@ public class Camera {
 		}
 
 		coveredHumans = newCoveredHumans;
+		// sort the list to avoid having different orders in different simulation runs 
+		Collections.sort(coveredHumans, (o1, o2) -> ((Human) o1).getID() - ((Human)o2).getID());
 	}
 	
 	/*

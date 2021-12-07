@@ -122,11 +122,13 @@ public class BasicBuilder implements ContextBuilder<Object> {
 			if (! directory.exists()) {
 				directory.mkdir();
 			}
+			PrintStream stdout = System.out;
+			System.setOut(System.out);  // first set to default, in case the builder is run again
 			File file = new File(baseDir + fileName);
 	        PrintStream stream;
 			try {
 				stream = new PrintStream(file);
-				System.out.println("All \"System.out\" is directed to "+file.getAbsolutePath());
+				//System.out.println("All \"System.out\" is directed to "+file.getAbsolutePath());
 		        System.setOut(stream);
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
