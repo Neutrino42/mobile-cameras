@@ -117,13 +117,11 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 		// https://stackoverflow.com/questions/6469969/pseudo-random-number-generator-from-two-inputs
 		// Use user provided seed when re-initializing humans
 		int seedOriginal = RandomHelper.getSeed();  // The seed is automatically loaded from parameters.xml
-		//System.out.println(seedOriginal);
-		
+		//System.out.println(seedOriginal);	
 		int userInitSeed = (humanSeed * 7919 + scenarioTime* 7057 + 17) ^ 13579;
+		
+		// Initialize the environment: human moving direction, but NOT POSITION
 		RandomHelper.setSeed(userInitSeed);
-
-		// Initialize the environment: human moving direction and position
-		double[] location = new double[2];
 		for (int id = 0; id < humanCount; id++) {
 			// check whether the human is covered or uncovered
 			Element humanInfo = null;
@@ -132,12 +130,7 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 			} else if (uncovHumMap.containsKey(id)){
 				humanInfo = uncovHumMap.get(id);
 			}
-			
 			int angle = Integer.parseInt(humanInfo.getAttribute("angle"));
-			location[0] = Double.parseDouble(humanInfo.getAttribute("x"));
-			location[1] = Double.parseDouble(humanInfo.getAttribute("y"));
-			location = MyUtil.updateByBoundaryCheck(location[0], location[1], maxX, maxY);
-			
 			// !! Note that here we do not introduce randomness in human's behavior
 			Human human = new Human(id, space, grid, angle, humanSpeed, humanSeed, false);
 			context.add(human);
@@ -147,19 +140,7 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 				int uncertainty = 0;
 				human.setDuration(startTime, RandomHelper.nextIntFromTo(0, uncertainty)); 
 			}
-			
-			// Particularly, if the human is uncovered, estimate its location and importance
-			if (humanPositionUncertainty > 0 && uncovHumMap.containsKey(id)){
-				double deltaX = RandomHelper.nextDoubleFromTo(-humanPositionUncertainty, humanPositionUncertainty);
-				double deltaY = RandomHelper.nextDoubleFromTo(-humanPositionUncertainty, humanPositionUncertainty);
-				location = estimateLocation(location, deltaX, deltaY);
-			}
-			
-			// Initialize the human's location
-			space.moveTo(human, location);
-			
 		}
-		
 		// set back to default seed for cameras
 		RandomHelper.setSeed(seedOriginal);
 
@@ -171,7 +152,7 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 		
 		NodeList cameraListFromXML = scenario.getElementsByTagName("camera");
 		assert (cameraCount == cameraListFromXML.getLength());
-
+		double[] location = new double[2];
 		for (int i = 0; i < cameraListFromXML.getLength(); i++) {
 			Element cameraFromXML = (Element) cameraListFromXML.item(i);
 			int id = Integer.parseInt(cameraFromXML.getAttribute("id"));
@@ -252,6 +233,48 @@ public class TraceBasedBuilder implements ContextBuilder<Object> {
 				}
 			}
 		}
+		
+		
+		// Initialize the environment: human POSITION
+		RandomHelper.setSeed(userInitSeed);
+		for (int id = 0; id < humanCount; id++) {
+			// check whether the human is covered or uncovered
+			Element humanInfo = null;
+			if (covHumMap.containsKey(id)) {
+				humanInfo = covHumMap.get(id);
+			} else if (uncovHumMap.containsKey(id)){
+				humanInfo = uncovHumMap.get(id);
+			}
+			location[0] = Double.parseDouble(humanInfo.getAttribute("x"));
+			location[1] = Double.parseDouble(humanInfo.getAttribute("y"));
+			location = MyUtil.updateByBoundaryCheck(location[0], location[1], maxX, maxY);
+			
+			final int id_query = id;
+			Stream<Object> s3 = context.getObjectsAsStream(Human.class);
+			Human human = (Human) s3.filter(h -> ((Human) h).getID() == id_query).collect(Collectors.toList()).get(0);
+			
+			// Particularly, if the human is uncovered, estimate its location and importance
+			if (humanPositionUncertainty > 0 && uncovHumMap.containsKey(id)){
+				while(true) {
+					double deltaX = RandomHelper.nextDoubleFromTo(-humanPositionUncertainty, humanPositionUncertainty);
+					double deltaY = RandomHelper.nextDoubleFromTo(-humanPositionUncertainty, humanPositionUncertainty);
+					location = estimateLocation(location, deltaX, deltaY);
+					
+					final NdPoint location_candidate = new NdPoint(location);
+					Stream<Object> s4 = context.getObjectsAsStream(Camera.class);
+					List<Object> coveringCams = s4.filter(camera -> space.getDistance(location_candidate, space.getLocation(camera)) <= ((Camera) camera).getRange())
+							.collect(Collectors.toList());
+					// Only if this estimated position is not covered by any camera, then return
+					if(coveringCams.size() == 0) {
+						break;
+					}
+				}
+			}
+			// Initialize the human's location
+			space.moveTo(human, location);
+		}
+		// set back to default seed for cameras
+		RandomHelper.setSeed(seedOriginal);
 
 
 		// Initialize grid

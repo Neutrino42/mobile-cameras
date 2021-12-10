@@ -278,5 +278,9 @@ public class Camera {
 	public void setCoveredHumans(List<Object> newCoveredHumans) {
 		this.coveredHumans = new ArrayList<>(newCoveredHumans);
 	}
+	
+	public int getRange() {
+		return this.range;
+	}
 
 }
