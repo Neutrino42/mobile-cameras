@@ -15,9 +15,13 @@ public class EntryPoint {
     }
 
     public static void main(String[] args) {
-        GatewayServer gatewayServer = new GatewayServer(new EntryPoint());
+    	int port = 25335;
+    	if(args.length == 1) {
+    		port = Integer.parseInt(args[0]); 
+    	}
+    	GatewayServer gatewayServer = new GatewayServer(new EntryPoint(), port);
         gatewayServer.start();
-        System.out.println("Gateway Server Started");
+        System.out.println("Gateway Server Started At Port " + port);
     }
 
 }
