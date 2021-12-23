@@ -119,6 +119,7 @@ public class MyUtil {
 		
 		Schedule schedule = (Schedule) RunEnvironment.getInstance().getCurrentSchedule();
 		
+		ScheduleParameters sp101 = ScheduleParameters.createRepeating(startTime, 1, 101);
 		ScheduleParameters sp100 = ScheduleParameters.createRepeating(startTime, 1, 100);
 		ScheduleParameters sp1Every5 = ScheduleParameters.createRepeating(startTime2, 5, 1); // this one is different
 		ScheduleParameters spSecondLast = ScheduleParameters.createRepeating(startTime-1 , 1, ScheduleParameters.LAST_PRIORITY + 1);
@@ -128,8 +129,9 @@ public class MyUtil {
 		ScheduleParameters spLast = ScheduleParameters.createRepeating(startTime-1, 1, ScheduleParameters.LAST_PRIORITY);
 		
 		for (Object cam : camList) {
-			schedule.schedule(sp100, cam, "step");
-			schedule.schedule(sp1Every5, cam, "clearMsg");
+			schedule.schedule(sp101, cam, "sense");
+			schedule.schedule(sp100, cam, "thinkAndAct");
+//			schedule.schedule(sp1Every5, cam, "clearMsg");
 			schedule.schedule(spSecondLast, cam, "printTrace");
 		}
 		

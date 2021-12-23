@@ -43,7 +43,9 @@ public class Camera {
 	private double maxSpeed;
 	private List<Object> coveredHumans;
 	private List<Message> receivedMsg;
+	private List<Message> msgBuffer;
 	private String actionLog;
+	private double t;
 	
 	public static int K = 3; // k for k-coverage
 
@@ -52,62 +54,69 @@ public class Camera {
 		this.space = space;
 		this.grid = grid;
 		this.range = range;
+		this.msgBuffer = new ArrayList<>();
 		this.receivedMsg = new ArrayList<>();
 		this.coveredHumans = new ArrayList<Object>();
 	}
 	
-	
-	public void sense(Context<Object> context, Network<Object> covNet) {
+	//@ScheduledMethod(start = 1, interval = 1, priority = 101)
+	public void sense() {
+		// get current time
+		this.t = RunEnvironment.getInstance().getCurrentSchedule().getTickCount();
+		
+		Context<Object> context = ContextUtils.getContext(this);
+		Network<Object> covNet = (Network<Object>) context.getProjection("coverage network");
+		
 		// get the grid and space location of this Camera
 		GridPoint myPt = grid.getLocation(this);
 		NdPoint myNdPt = space.getLocation(this);
 
-		// find the human within the circular range
+		// find nearby human within the circular range
 		Stream<Object> s = context.getObjectsAsStream(Human.class);
 		List<Object> newCoveredHumans = s.filter(human -> space.getDistance(myNdPt, space.getLocation(human)) < range)
 				.collect(Collectors.toList());
-
-		// remove edges with humans that are not being covered any more
+		
+		// update covNet:
+		// (1) remove edges with humans that are not being covered any more
 		coveredHumans.removeAll(newCoveredHumans);
 		for (Object human : coveredHumans) {
 			covNet.removeEdge(covNet.getEdge(this, human));
 		}
-		// add new edges with newly covered humans
+		// (2) add new edges with newly covered humans
 		for (Object human : newCoveredHumans) {
 			if (!covNet.isAdjacent(this, human)) {
 				covNet.addEdge(this, human);
 			}
 		}
 
-		coveredHumans = newCoveredHumans;
+		this.coveredHumans = newCoveredHumans;
 		// sort the list to avoid having different orders in different simulation runs 
 		Collections.sort(coveredHumans, (o1, o2) -> ((Human) o1).getID() - ((Human)o2).getID());
+		
+		/*
+		 * (1) remove outdated messages (5 time steps max)
+		 * (2) load messages from buffer
+		 * (3) sort message list
+		 * (4) clear buffer
+		 */
+		receivedMsg.removeIf(msg -> this.t - msg.getTime() >= 5);  // preserve only 4 past time steps
+		receivedMsg.addAll(msgBuffer);
+		receivedMsg.sort(Comparator
+				.comparingDouble(Message::getTime)
+				.thenComparing(msg -> msg.getSender().getID())
+				);
+		msgBuffer.clear();
+		
 	}
 	
-	/*
-	 * human run() first, camera step() next
-	 */
+
 	//@ScheduledMethod(start = 1, interval = 1, priority = 100)
-	public void step() {
+	public void thinkAndAct() {
 		this.actionLog = "";
 		Context<Object> context = ContextUtils.getContext(this);
 		Network<Object> covNet = (Network<Object>) context.getProjection("coverage network");
-		/*
-		 * 1. Sensing
-		 */
 		
-		sense(context, covNet);
-		
-		/*
-		 * Think and Act
-		 */
-		
-		// Random seeding: each camera will randomize the list the same way every time
-		// seed := currentSimulationTimeTick, repastSeedFromUser, ID, 999 
-		String seedStr = Double.toString(RunEnvironment.getInstance().getCurrentSchedule().getTickCount()) +
-				Double.toString(RandomHelper.getSeed()) + "seed" +
-				Integer.toString(this.id+1) + "999";
-		int seed = new StringBuilder(seedStr).reverse().toString().hashCode() % (2^24);
+		int seed = buildSeed();
 		
 		Collections.shuffle(coveredHumans, new Random(seed));
 		
@@ -116,7 +125,7 @@ public class Camera {
 			if (human.isImportant()) {
 				// notify others only if the human is not k-covered
 				if (covNet.getDegree(human) < K) {
-					notifyOthers(human);
+					notifyOthers(human, new Random(seed));
 				}
 				follow(human);
 				return;
@@ -128,14 +137,14 @@ public class Camera {
 			return;
 		} 
 		
-		randomWalk(5, new Random(seed));
+		randomWalk(5);
 		
 	}
 	
 	//@ScheduledMethod(start = 1, interval = 5, priority = 1)
-	public void clearMsg() {
-		this.receivedMsg.clear();
-	}
+//	public void clearMsg() {
+//		this.receivedMsg.clear();
+//	}
 	
 	//@ScheduledMethod(start = 1, interval = 1, priority = ScheduleParameters.LAST_PRIORITY + 1 )
 	public void printTrace() {
@@ -159,17 +168,27 @@ public class Camera {
 	
 
 	
-	private void notifyOthers(Human human) {
+	private void notifyOthers(Human human, Random random) {
 		// here we use k-best to demonstrate
 		
 		Context<Object> context = ContextUtils.getContext(this);
 		Network<Object> commNet = (Network<Object>)context.getProjection("communication network");
 		Network<Object> covNet = (Network<Object>)context.getProjection("coverage network");
 		
-		// collect all connected edge into a List to sort it by weight.
+		/* Collect all connected edge into a List to sort it by weight.
+		 * First sort by ID, then shuffle, finally sort by weight.
+		 * In such a way, for edges with the same weight, their order is randomized
+		*/
 		List<RepastEdge<Object>> orderedEdgeList = new ArrayList<>();
 		commNet.getEdges(this).forEach(orderedEdgeList::add);
-		orderedEdgeList.sort(Comparator.comparingDouble(RepastEdge<Object>::getWeight).reversed());
+		orderedEdgeList.sort(Comparator.comparing(
+				e -> ((Camera) e.getSource()).getID() + ((Camera) e.getTarget()).getID() )
+		);
+		Collections.shuffle(orderedEdgeList, random);
+		orderedEdgeList.sort(Comparator
+				.comparingDouble(RepastEdge<Object>::getWeight)
+				.reversed()
+		);
 		
 		this.actionLog += "n|";
 		// loop for k-1 best cameras to pass message
@@ -192,8 +211,7 @@ public class Camera {
 			if (covNet.isAdjacent(human, nghCamera)) {
 				continue;
 			}
-			double currTime = RunEnvironment.getInstance().getCurrentSchedule().getTickCount();
-			nghCamera.receiveMsg(new Message(currTime, this, human));
+			nghCamera.receiveMsg(new Message(this.t, this, human));
 			
 			this.actionLog += nghCamera.getID() + "|";
 		}
@@ -201,12 +219,12 @@ public class Camera {
 	}
 
 	public void receiveMsg(Message msg) {		
-		receivedMsg.add(msg);
+		msgBuffer.add(msg);
 	}
 
-	private void randomWalk(double distance, Random randGen) {
+	private void randomWalk(double distance) {
 		//double angle = (double)randGen.nextInt(360);
-		int currTime = (int) RunEnvironment.getInstance().getCurrentSchedule().getTickCount();
+		int currTime = (int) this.t;
 		double rad = Math.toRadians(((currTime * 7919 + (this.id + 1)* 7057 + 17) ^ 13579) % 7 * (360/6));
 		//double rad = Math.toRadians((currTime) % 4 * 90);
 		space.moveByVector(this, distance, rad , 0);
@@ -222,18 +240,20 @@ public class Camera {
 		Context<Object> context = ContextUtils.getContext(this);
 		Network<Object> net = (Network<Object>)context.getProjection("communication network");
 		
-		double maxWeight = 0;
-		double tmpWeight = 0;
-		Camera targetCam = receivedMsg.get(0).getSender(); // not used
-		Human targetHum = receivedMsg.get(0).getHuman();
-		for (Message msg : receivedMsg) {
-			tmpWeight = net.getEdge(msg.getSender(), this).getWeight(); // since the network (graph)) is undirected, no need to distinguish source and target
-			if (tmpWeight > maxWeight) {
-				maxWeight = tmpWeight;
-				targetCam = msg.getSender(); // not used
-				targetHum = msg.getHuman();
-			}
+		// sort messages first by edge weight, then by time
+		List<Message> sortedMsg = receivedMsg.stream().sorted(
+				Comparator
+				.comparing((Message msg) -> net.getEdge(msg.getSender(), this).getWeight())  /* ascending weight */
+				.thenComparingDouble(Message::getTime)  /* ascending time */
+				.reversed()  /* all reversed */
+				).collect(Collectors.toList());
+		// In net.getEdge(), no need to distinguish source and target, since the network (graph) is undirected
+		String mystr = "";
+		for (Message msg : sortedMsg) {
+			mystr += (String.format("%f %f\n", net.getEdge(msg.getSender(), this).getWeight(), msg.getTime()));
 		}
+		Camera targetCam = sortedMsg.get(0).getSender(); // not used
+		Human targetHum = sortedMsg.get(0).getHuman();
 		
 		moveTowards(space.getLocation(targetHum), 2);
 		this.actionLog += "re|"+ targetCam.getID() + "|" + targetHum.getID();
@@ -281,6 +301,18 @@ public class Camera {
 	
 	public int getRange() {
 		return this.range;
+	}
+	
+	private int buildSeed() {
+		// Random seeding: each camera will randomize the list the same way every time
+		// seed := currentSimulationTimeTick, repastSeedFromUser, ID, 999 
+		String seedStr = Double.toString(this.t)
+				+ Double.toString(RandomHelper.getSeed())
+				+ "seed"
+				+ Integer.toString(this.id+1)
+				+ "999";
+		int seed = new StringBuilder(seedStr).reverse().toString().hashCode() % (2^24);
+		return seed;
 	}
 
 }

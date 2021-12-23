@@ -1,6 +1,7 @@
 package mobileCameras;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -69,8 +70,9 @@ public class MyContext extends DefaultContext {
 		Network<Object> covNet = (Network<Object>) getProjection("coverage network");
 		Stream<Object> s = getObjectsAsStream(Human.class);
 		List<Object> uncoveredHumanList = s.filter(
-				human -> covNet.getDegree(human) == 0
-				).collect(Collectors.toList());
+				human -> covNet.getDegree(human) == 0)
+				.sorted(Comparator.comparing(human -> ((Human) human).getID()))
+				.collect(Collectors.toList());
 		out = String.format("%.1f,objs,%d", RunEnvironment.getInstance().getCurrentSchedule().getTickCount(), uncoveredHumanList.size());
 		for (Object human : uncoveredHumanList) {
 			out += String.format(",%s",human.toString());
