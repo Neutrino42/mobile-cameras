@@ -94,13 +94,13 @@ public class Camera {
 		Collections.sort(coveredHumans, (o1, o2) -> ((Human) o1).getID() - ((Human)o2).getID());
 		
 		/*
-		 * (1) remove outdated messages (5 time steps max)
-		 * (2) load messages from buffer
+		 * (1) load messages from buffer
+		 * (2) remove outdated messages (5 time steps max)
 		 * (3) sort message list
 		 * (4) clear buffer
 		 */
-		receivedMsg.removeIf(msg -> this.t - msg.getTime() >= 5);  // preserve only 4 past time steps
 		receivedMsg.addAll(msgBuffer);
+		receivedMsg.removeIf(msg -> this.t - msg.getTime() >= 5);  // preserve only 4 past time steps
 		receivedMsg.sort(Comparator
 				.comparingDouble(Message::getTime)
 				.thenComparing(msg -> msg.getSender().getID())
@@ -157,8 +157,11 @@ public class Camera {
 		for (Object human: coveredHumans) {
 			out += String.format("%s,",human.toString());
 		}
-		out += String.format("msg,%d", receivedMsg.size());
+		out += String.format("msg,%d", receivedMsg.size() + msgBuffer.size());
 		for (Message msg : receivedMsg) {
+			out += "," + msg.toString();
+		}
+		for (Message msg : msgBuffer) {
 			out += "," + msg.toString();
 		}
 		out += "," + "act,{" + this.actionLog + "}";
