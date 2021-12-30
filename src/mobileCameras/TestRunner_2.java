@@ -64,7 +64,7 @@ public class TestRunner_2 extends AbstractRunner {
 	public void runInitialize(){
 		controller.runInitialize(params);
 		schedule = RunState.getInstance().getScheduleRegistry().getModelSchedule();
-		this.setOutputStream();
+//		this.setOutputStream();
 	}
 
 	public void cleanUpRun(){
