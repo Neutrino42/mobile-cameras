@@ -1,0 +1,6 @@
+#
+#Wed Nov 24 12:34:44 CST 2021
+incoming=tcp\://127.0.0.1\:5555
+outgoing=tcp\://127.0.0.1\:5556
+scenario=../mobileCameras.rs
+working.directory=../

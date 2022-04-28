@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<parameters>
+					<parameter name="randomSeed" displayName="Default Random Seed" type="int" 
+						defaultValue="3333" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+											/>
+				<parameter name="camera_count" displayName="Camera Count" type="int" 
+						defaultValue="15" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+											/>
+				<parameter name="init_scenario_path" displayName="Init Scenario File Path" type="java.lang.String" 
+						defaultValue="/Users/Nann/workspace/icws2021/src/simulator/traces_real/init_random2_10o_15c_4444.xml" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$StringStringConverter"
+											/>
+				<parameter name="human_position_uncertainty" displayName="Human Position Uncertainty" type="double" 
+						defaultValue="0.0" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+											/>
+				<parameter name="human_count" displayName="Human Count" type="int" 
+						defaultValue="10" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+											/>
+				<parameter name="output_trace_path" displayName="Output Trace File Path" type="java.lang.String" 
+						defaultValue="/Users/Nann/eclipse-workspace/mobileCameras/trace/prediction/sample3333_test.txt" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$StringStringConverter"
+											/>
+				<parameter name="update_knowledge" displayName="Update Knowledge from Init File?" type="boolean" 
+						defaultValue="true" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$BooleanConverter"
+											/>
+				<parameter name="user_seed" displayName="User Provided Seed for Human" type="int" 
+						defaultValue="999" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+											/>
+		</parameters>
+
+
